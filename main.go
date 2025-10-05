@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-var File *os.File
+var WriteFile *os.File
+var ReadFile *os.File
 
 func runPrompt() {
 	// Use regular reader for line-by-line input
@@ -50,7 +51,7 @@ func runPrompt() {
 				fmt.Printf("RESP Command received:\n%s\n", command)
 				// Also process with scanner for additional analysis
 				fmt.Println("Scanner analysis:")
-				_, err := File.WriteString(line)
+				_, err := WriteFile.WriteString(line[:len(line)])
 				if err != nil {
 					log.Fatalf("failed to write to file: %v", err)
 				}
@@ -109,16 +110,47 @@ func preprocessInput(input string) string {
 }
 
 func init() {
-	file, err := os.OpenFile("base.aof", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	File = file
+	// Open file for writing (AOF - Append Only File)
+	writeFile, err := os.OpenFile("base.aof", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
+		fmt.Println("Error opening write file:", err)
 		return
 	}
+	WriteFile = writeFile
+
+	// Open file for reading
+	readFile, err := os.Open("base.aof")
+	if err != nil {
+		// If file doesn't exist yet, that's okay - we'll create it when we write
+		if !os.IsNotExist(err) {
+			fmt.Println("Error opening read file:", err)
+		}
+		ReadFile = nil
+		return
+	}
+	ReadFile = readFile
 }
 
 func main() {
 	fmt.Println("YAKVS")
+
+	// Only read from file if it exists and is readable
+	if ReadFile != nil {
+		scanner := bufio.NewScanner(ReadFile)
+		fmt.Println("Reading from AOF file:")
+		for scanner.Scan() {
+			line := scanner.Text() // Get the current line as a string
+
+			processWithScanner(preprocessInput(line)) // Process the line (e.g., print it)
+		}
+		if err := scanner.Err(); err != nil {
+			log.Fatalf("Error reading file: %v", err)
+		}
+		ReadFile.Close()
+	} else {
+		fmt.Println("No AOF file found, starting fresh.")
+	}
+
 	runPrompt()
-	defer File.Close()
+	defer WriteFile.Close()
 }
