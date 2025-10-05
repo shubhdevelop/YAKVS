@@ -55,10 +55,10 @@ func (s *Scanner) scanToken() {
 			s.addToken(token.SET, nil)
 		case rune(token.PUSH_DATA):
 			s.addToken(token.PUSH_DATA, nil)
-		case rune(token.CARRIAGE_RETURN):
-			s.addToken(token.CARRIAGE_RETURN, nil)
-		case rune(token.NEW_LINE):
-			s.addToken(token.NEW_LINE, nil)
+		// case rune(token.CARRIAGE_RETURN):
+		// 	s.addToken(token.CARRIAGE_RETURN, nil)
+		// case rune(token.NEW_LINE):
+		// 	s.addToken(token.NEW_LINE, nil)
 		case '"':
 			s.string()
 		default:
