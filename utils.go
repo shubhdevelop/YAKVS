@@ -1,5 +1,7 @@
 package main
 
+import "strings"
+
 // Convert literal escape sequences to actual control characters
 // This is only needed for interactive input where user types \r\n literally
 func preprocessInput(input string) string {
