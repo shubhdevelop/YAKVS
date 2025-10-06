@@ -3,10 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/shubhdevelop/YAKVS/scanner"
+	"io"
 	"log"
 	"os"
 	"strings"
+	"github.com/shubhdevelop/YAKVS/parser"
 )
 
 var WriteFile *os.File
@@ -37,47 +38,28 @@ func runPrompt() {
 			break
 		}
 
-		// Process the input
-		processedLine := preprocessInput(line[:len(line)-1])
-
 		// Try to detect if it's RESP format
-		if isRESPFormat(processedLine) {
-			// Create a RESPReader for this specific input
-			respReader := NewRESPReader(strings.NewReader(processedLine))
-			command, err := respReader.ReadCommand()
+		if isRESPFormat(line[:len(line)-1]) {
+			// Preprocess input to convert literal \r\n to actual control characters
+			processedInput := preprocessInput(line[:len(line)-1])
+			parser := parser.NewStreamingParser([]byte(processedInput))
+			fmt.Println("Parsing RESP command:", line[:len(line)-1])
+			command, err := parser.ParseCommand()
 			if err != nil {
 				fmt.Printf("Error parsing RESP command: %v\n", err)
-			} else {
-				fmt.Printf("RESP Command received:\n%s\n", command)
-				// Also process with scanner for additional analysis
-				fmt.Println("Scanner analysis:")
-				_, err := WriteFile.WriteString(line[:len(line)])
+			}
+			if command.Name == "SET" {
+				fmt.Println("SET", command.Args)
+				_, err := WriteFile.WriteString(processedInput)
 				if err != nil {
 					log.Fatalf("failed to write to file: %v", err)
 				}
-				processWithScanner(command)
 			}
-		} else {
-			// Process as regular input using scanner
-			processWithScanner(processedLine)
+			fmt.Println("Executed command:", command)
 		}
 	}
 }
 
-func processWithScanner(input string) {
-	scanner := scanner.Scanner{
-		Source: input,
-	}
-	tokens, err := scanner.ScanTokens()
-	if err != nil {
-		fmt.Println("Error scanning tokens:", err)
-		return
-	}
-	fmt.Printf("Tokens (%d):\n", len(tokens))
-	for i, token := range tokens {
-		fmt.Printf("  %d: %v\n", i, token)
-	}
-}
 
 func isRESPFormat(input string) bool {
 	// Check if input starts with RESP protocol indicators
@@ -133,19 +115,30 @@ func init() {
 
 func main() {
 	fmt.Println("YAKVS")
-
-	// Only read from file if it exists and is readable
 	if ReadFile != nil {
-		scanner := bufio.NewScanner(ReadFile)
 		fmt.Println("Reading from AOF file:")
-		for scanner.Scan() {
-			line := scanner.Text() // Get the current line as a string
-
-			processWithScanner(preprocessInput(line)) // Process the line (e.g., print it)
+		// Read the entire file content
+		fileContent, err := io.ReadAll(ReadFile)
+		if err != nil {
+			log.Fatalf("Error reading AOF file: %v", err)
 		}
-		if err := scanner.Err(); err != nil {
-			log.Fatalf("Error reading file: %v", err)
+		
+		// Parse the entire file as RESP commands
+		parser := parser.NewStreamingParser(fileContent)
+		
+		// Parse all commands in the file
+		for {
+			command, err := parser.ParseCommand()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				fmt.Printf("Error parsing RESP command: %v\n", err)
+				break
+			}
+			fmt.Println("Executed command:", command)
 		}
+		
 		ReadFile.Close()
 	} else {
 		fmt.Println("No AOF file found, starting fresh.")
