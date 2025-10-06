@@ -3,15 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"log"
 	"os"
-	"strings"
 	"github.com/shubhdevelop/YAKVS/parser"
+	"github.com/shubhdevelop/YAKVS/aof"
 )
 
-var WriteFile *os.File
-var ReadFile *os.File
+var aofManager *aof.AOFManager
 var store *Store
 
 func runPrompt() {
@@ -49,42 +47,27 @@ func runPrompt() {
 			if err != nil {
 				fmt.Printf("Error parsing RESP command: %v\n", err)
 			}
-			// check if command is [SET, DEL]
-			if command.Name == "SET" || command.Name == "DEL" {
-				_, err := WriteFile.WriteString(processedInput)
-
+			// check if command should be persisted
+			if aofManager.ShouldPersistCommand(command.Name) {
+				err := aofManager.WriteCommand(processedInput)
 				if err != nil {
-					log.Fatalf("failed to write to file: %v", err)
+					log.Fatalf("failed to write to AOF file: %v", err)
 				}
-				ExecuteCommand(command)
-			} else {
-				ExecuteCommand(command)
 			}
+			ExecuteCommand(command)
 			fmt.Println("Executed command:", command)
 		}
 	}
 }
 
 func init() {
-	// Open file for writing (AOF - Append Only File)
-	writeFile, err := os.OpenFile("base.aof", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	// Initialize AOF manager
+	aofManager = aof.NewAOFManager("base.aof")
+	err := aofManager.Initialize()
 	if err != nil {
-		fmt.Println("Error opening write file:", err)
-		return
+		log.Fatalf("Error initializing AOF manager: %v", err)
 	}
-	WriteFile = writeFile
-
-	// Open file for reading
-	readFile, err := os.Open("base.aof")
-	if err != nil {
-		// If file doesn't exist yet, that's okay - we'll create it when we write
-		if !os.IsNotExist(err) {
-			fmt.Println("Error opening read file:", err)
-		}
-		ReadFile = nil
-		return
-	}
-	ReadFile = readFile
+	// Initialize store
 	store = &Store{
 		Values: make(map[string]interface{}),
 	}
@@ -92,34 +75,12 @@ func init() {
 
 func main() {
 	fmt.Println("YAKVS")
-	if ReadFile != nil {
-		fmt.Println("Reading from AOF file:")
-		// Read the entire file content
-		fileContent, err := io.ReadAll(ReadFile)
-		if err != nil {
-			log.Fatalf("Error reading AOF file: %v", err)
-		}
-		
-		// Parse the entire file as RESP commands
-		parser := parser.NewStreamingParser(fileContent)
-		
-		// Parse all commands in the file
-		for {
-			command, err := parser.ParseCommand()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				fmt.Printf("Error parsing RESP command: %v\n", err)
-				break
-			}
-			ExecuteCommand(command)
-		}
-		ReadFile.Close()
-	} else {
-		fmt.Println("No AOF file found, starting fresh.")
+	// Read and execute commands from AOF file
+	err := aofManager.ReadAndExecuteCommands(ExecuteCommand)
+	if err != nil {
+		log.Fatalf("Error reading AOF file: %v", err)
 	}
 
 	runPrompt()
-	defer WriteFile.Close()
+	defer aofManager.Close()
 }
