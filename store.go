@@ -28,3 +28,8 @@ func (s *Store) DeleteValue(key string) bool {
 	}
 	return false
 }
+
+func (s *Store) Exists(key string) bool {
+	_, exists := s.Values[key]
+	return exists
+}

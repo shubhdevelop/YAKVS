@@ -12,6 +12,7 @@ import (
 
 var WriteFile *os.File
 var ReadFile *os.File
+var store *Store
 
 func runPrompt() {
 	// Use regular reader for line-by-line input
@@ -49,11 +50,12 @@ func runPrompt() {
 				fmt.Printf("Error parsing RESP command: %v\n", err)
 			}
 			if command.Name == "SET" {
-				fmt.Println("SET", command.Args)
 				_, err := WriteFile.WriteString(processedInput)
+
 				if err != nil {
 					log.Fatalf("failed to write to file: %v", err)
 				}
+				ExecuteCommand(command)
 			}
 			fmt.Println("Executed command:", command)
 		}
@@ -111,6 +113,9 @@ func init() {
 		return
 	}
 	ReadFile = readFile
+	store = &Store{
+		Values: make(map[string]interface{}),
+	}
 }
 
 func main() {
@@ -136,9 +141,8 @@ func main() {
 				fmt.Printf("Error parsing RESP command: %v\n", err)
 				break
 			}
-			fmt.Println("Executed command:", command)
+			ExecuteCommand(command)
 		}
-		
 		ReadFile.Close()
 	} else {
 		fmt.Println("No AOF file found, starting fresh.")
