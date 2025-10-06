@@ -1,10 +1,10 @@
-package main
+package utils
 
 import "strings"
 
-// Convert literal escape sequences to actual control characters
+// PreprocessInput converts literal escape sequences to actual control characters
 // This is only needed for interactive input where user types \r\n literally
-func preprocessInput(input string) string {
+func PreprocessInput(input string) string {
 	result := input
 	result = strings.ReplaceAll(result, "\\r", "\r")
 	result = strings.ReplaceAll(result, "\\n", "\n")
@@ -14,7 +14,8 @@ func preprocessInput(input string) string {
 }
 
 
-func isRESPFormat(input string) bool {
+// IsRESPFormat checks if input starts with RESP protocol indicators
+func IsRESPFormat(input string) bool {
 	// Check if input starts with RESP protocol indicators
 	if len(input) == 0 {
 		return false

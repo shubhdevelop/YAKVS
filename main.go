@@ -8,6 +8,7 @@ import (
 	"github.com/shubhdevelop/YAKVS/parser"
 	"github.com/shubhdevelop/YAKVS/aof"
 	"github.com/shubhdevelop/YAKVS/store"
+	"github.com/shubhdevelop/YAKVS/utils"
 )
 
 var aofManager *aof.AOFManager
@@ -39,9 +40,9 @@ func runPrompt() {
 		}
 
 		// Try to detect if it's RESP format
-		if isRESPFormat(line[:len(line)-1]) {
+		if utils.IsRESPFormat(line[:len(line)-1]) {
 			// Preprocess input to convert literal \r\n to actual control characters
-			processedInput := preprocessInput(line[:len(line)-1])
+			processedInput := utils.PreprocessInput(line[:len(line)-1])
 			parser := parser.NewStreamingParser([]byte(processedInput))
 			fmt.Println("Parsing RESP command:", line[:len(line)-1])
 			command, err := parser.ParseCommand()
