@@ -9,12 +9,12 @@ func ExecuteCommand(command *parser.Command) {
 	fmt.Println("Executing command:", command)
 	switch command.Name {
 	case "SET":
-		store.SetValue(command.Args[0], command.Args[1])
+		kvStore.SetValue(command.Args[0], command.Args[1])
 	case "GET":
-		fmt.Println(store.GetValue(command.Args[0]))
+		fmt.Println(kvStore.GetValue(command.Args[0]))
 	case "DEL":
-		store.DeleteValue(command.Args[0])
+		kvStore.DeleteValue(command.Args[0])
 	case "EXISTS":
-		fmt.Println(store.Exists(command.Args[0]))
+		fmt.Println(kvStore.Exists(command.Args[0]))
 	}
 }

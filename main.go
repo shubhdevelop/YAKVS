@@ -7,10 +7,11 @@ import (
 	"os"
 	"github.com/shubhdevelop/YAKVS/parser"
 	"github.com/shubhdevelop/YAKVS/aof"
+	"github.com/shubhdevelop/YAKVS/store"
 )
 
 var aofManager *aof.AOFManager
-var store *Store
+var kvStore *store.Store
 
 func runPrompt() {
 	// Use regular reader for line-by-line input
@@ -68,9 +69,7 @@ func init() {
 		log.Fatalf("Error initializing AOF manager: %v", err)
 	}
 	// Initialize store
-	store = &Store{
-		Values: make(map[string]interface{}),
-	}
+	kvStore = store.NewStore()
 }
 
 func main() {

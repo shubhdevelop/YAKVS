@@ -1,4 +1,4 @@
-package main
+package store
 
 type Store struct {
 	Values map[string]interface{}
@@ -8,6 +8,12 @@ type StoreInterface interface {
 	GetValue(key string) interface{}
 	SetValue(key string, value interface{})
 	DeleteValue(key string) bool
+}
+
+func NewStore() *Store {
+	return &Store{
+		Values: make(map[string]interface{}),
+	}
 }
 
 func (s *Store) GetValue(key string) interface{} {
