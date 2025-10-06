@@ -39,25 +39,29 @@ func runPrompt() {
 			break
 		}
 
+		resp, err := utils.ToRESP(line[:len(line)-1])
+		if err != nil {
+			fmt.Printf("Error converting to RESP: %v\n", err)
+			continue
+		}
 		// Try to detect if it's RESP format
-		if utils.IsRESPFormat(line[:len(line)-1]) {
-			// Preprocess input to convert literal \r\n to actual control characters
-			processedInput := utils.PreprocessInput(line[:len(line)-1])
-			parser := parser.NewStreamingParser([]byte(processedInput))
-			fmt.Println("Parsing RESP command:", line[:len(line)-1])
+		if utils.IsRESPFormat(resp) {
+				// Preprocess input to convert literal \r\n to actual control characters
+			// processedInput := utils.PreprocessInput(resp)
+			parser := parser.NewStreamingParser([]byte(resp))
+			fmt.Println("Parsing RESP command:", resp)
 			command, err := parser.ParseCommand()
 			if err != nil {
 				fmt.Printf("Error parsing RESP command: %v\n", err)
 			}
 			// check if command should be persisted
 			if aofManager.ShouldPersistCommand(command.Name) {
-				err := aofManager.WriteCommand(processedInput)
+				err := aofManager.WriteCommand(resp)
 				if err != nil {
 					log.Fatalf("failed to write to AOF file: %v", err)
 				}
 			}
 			ExecuteCommand(command)
-			fmt.Println("Executed command:", command)
 		}
 	}
 }
