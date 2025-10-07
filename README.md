@@ -16,10 +16,18 @@ A Redis-compatible in-memory key-value store written in Go, implementing the RES
   - Null values (`_`)
 
 - **Core Commands**:
-  - `SET key value` - Set a key-value pair
-  - `GET key` - Retrieve a value by key
-  - `DEL key` - Delete a key
-  - `EXISTS key` - Check if a key exists
+  - `SET key value` - Set a key-value pair (returns `+OK`)
+  - `GET key` - Retrieve a value by key (returns bulk string or `$-1` for nil)
+  - `DEL key` - Delete a key (returns `+OK` or `$-1`)
+  - `EXISTS key` - Check if a key exists (returns `:1` or `:0`)
+  - `TTL key` - Get remaining time-to-live for a key (returns `:seconds` or `:-1`/`:-2`)
+  - `EXPIRE key seconds` - Set expiration for a key (returns `+OK` or `:0`)
+  - `EXPIREAT key timestamp` - Set expiration using Unix timestamp (returns `+OK` or `:0`)
+
+- **Advanced TTL Features**:
+  - **Automatic Expiration**: Expired keys are automatically deleted when accessed
+  - **Dynamic TTL Calculation**: TTL returns actual remaining seconds until expiration
+  - **Expired Key Cleanup**: Keys past their expiration time are removed from storage
 
 - **Persistence**:
   - AOF (Append Only File) persistence
@@ -114,17 +122,20 @@ YAKVS
 >> SET mykey "Hello World"
 Parsing RESP command: *3\r\n$3\r\nSET\r\n$5\r\nmykey\r\n$11\r\nHello World\r\n
 Executing command: &{Name:SET Args:[mykey Hello World]}
++OK
 >> GET mykey
 Parsing RESP command: *2\r\n$3\r\nGET\r\n$5\r\nmykey\r\n
 Executing command: &{Name:GET Args:[mykey]}
+$11
 Hello World
 >> DEL mykey
 Parsing RESP command: *2\r\n$3\r\nDEL\r\n$5\r\nmykey\r\n
 Executing command: &{Name:DEL Args:[mykey]}
++OK
 >> EXISTS mykey
 Parsing RESP command: *2\r\n$6\r\nEXISTS\r\n$5\r\nmykey\r\n
 Executing command: &{Name:EXISTS Args:[mykey]}
-false
+:0
 >> exit
 ```
 
@@ -140,6 +151,36 @@ The application supports both plain text commands and native RESP protocol:
 **Native RESP Input**:
 ```
 >> *3\r\n$3\r\nSET\r\n$3\r\nkey\r\n$5\r\nvalue\r\n
+```
+
+#### RESP Response Format
+
+YAKVS now returns proper RESP protocol responses for all commands:
+
+**Command Response Types:**
+- `SET`, `DEL`, `EXPIRE`, `EXPIREAT`: Return `+OK` on success
+- `GET`: Returns `$<length>\r\n<value>\r\n` or `$-1\r` for nil
+- `EXISTS`: Returns `:1` (true) or `:0` (false)
+- `TTL`: Returns `:<remaining_seconds>` or `:-1` (no expiry) or `:-2` (key doesn't exist/expired)
+
+**TTL Response Details:**
+- `:<positive_number>`: Remaining seconds until expiration
+- `:-1`: Key exists but has no expiration set
+- `:-2`: Key doesn't exist or has expired (automatically cleaned up)
+
+**Example RESP Responses:**
+```
+>> SET key value
++OK
+>> GET key
+$5
+value
+>> EXISTS key
+:1
+>> TTL key
+:-1
+>> DEL key
++OK
 ```
 
 ### Testing
@@ -200,6 +241,8 @@ go test ./store -v
 
 - [x] RESP Protocol Parser
 - [x] Core Key-Value Operations
+- [x] RESP Response Format (Redis-compatible)
+- [x] TTL and Expiration Support
 - [x] AOF Persistence
 - [x] Interactive Command Line Interface
 - [x] Command Conversion (Plain Text → RESP)
@@ -218,7 +261,7 @@ go test ./store -v
 ### 📋 Future Roadmap
 
 - [ ] **Advanced Data Types**: Lists, Sets, Hashes, Sorted Sets
-- [ ] **Expiration**: TTL support for keys
+- [ ] **Background Expiration**: Automatic cleanup without key access
 - [ ] **Persistence Options**: RDB snapshots, AOF rewriting
 - [ ] **Network Protocol**: TCP server for remote connections
 - [ ] **Replication**: Master-slave replication
