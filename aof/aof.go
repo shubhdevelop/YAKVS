@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/shubhdevelop/YAKVS/parser"
 )
@@ -113,9 +114,10 @@ func (aof *AOFManager) ShouldPersistCommand(commandName string) bool {
 		"DEL": true,
 		"EXPIRE": true,
 		"EXPIREAT": true,
+		"PERSIST": true,
 		// Add more commands that modify data as needed
 	}
-	return persistentCommands[commandName]
+	return persistentCommands[strings.ToUpper(commandName)]
 }
 
 func (aof *AOFManager) GetWriteFile() *os.File {
