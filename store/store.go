@@ -32,6 +32,15 @@ func NewStore() *Store {
 
 // for the given key get the kvObject and return the value
 func (s *Store) GetValue(key string) interface{} {
+
+	// if it exists in the expiry dictionary, check if it has expired
+	if _, exists := (*s.Expiry)[key]; exists {
+		if time.Now().Unix() > (*s.Expiry)[key] {
+			delete(*s.Expiry, key)
+			delete(*s.Dict, key)
+			return nil // Key has expired
+		}
+	}
 	// only return if the ref count if greater than 0
 	if obj, exists := (*s.Dict)[key]; exists && obj.refcount > 0 {
 		// Handle different encodings based on the object's encoding
