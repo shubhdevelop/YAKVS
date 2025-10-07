@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/shubhdevelop/YAKVS/parser"
@@ -11,7 +12,7 @@ import (
 
 func ExecuteCommand(command *parser.Command, store *store.Store) {
 	fmt.Println("Executing command:", command)
-	switch command.Name {
+	switch strings.ToUpper(command.Name) {
 	case "SET":
 		if len(command.Args) < 2 {
 			fmt.Println("Error: SET requires 2 arguments (key, value)")
