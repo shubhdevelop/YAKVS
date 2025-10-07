@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 )
 
 // Deprecated: No longer needed because we turning interactive input to RESP protocol
@@ -49,6 +49,16 @@ func ToRESP(command string) (string, error) {
 	var respBuilder strings.Builder
 
 	switch cmd {
+	case "EXPIRE", "EXPIREAT":
+		if len(parts) < 3 {
+			return "", fmt.Errorf("%s command requires at least two arguments: key and TTL", cmd)
+		}
+		// The number of arguments in the array will be 1 (command) + key + TTL
+		respBuilder.WriteString(fmt.Sprintf("*%d\r\n", len(parts)))
+		for _, part := range parts {
+			respBuilder.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(part), part))
+		}
+		return respBuilder.String(), nil
 	case "SET" :
 		// SET key value [EX seconds] [PX milliseconds] [NX|XX]
 		if len(parts) < 3 {
@@ -62,11 +72,11 @@ func ToRESP(command string) (string, error) {
 		return respBuilder.String(), nil
 	
 	// all uppercase commands or all lowercase commands both are valid
-	case "GET", "DEL", "EXISTS": 
+	case "GET", "DEL", "EXISTS", "TTL" : 
 		if len(parts) < 2 {
 			return "", fmt.Errorf("%s command requires at least one key", cmd)
 		}
-		// For GET, DEL, EXISTS, the number of arguments is 1 (command) + number of keys
+		// For GET, DEL, EXISTS, TTL, the number of arguments is 1 (command) + number of keys
 		respBuilder.WriteString(fmt.Sprintf("*%d\r\n", len(parts)))
 		for _, part := range parts {
 			respBuilder.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(part), part))

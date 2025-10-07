@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"github.com/shubhdevelop/YAKVS/parser"
+
 	"github.com/shubhdevelop/YAKVS/aof"
+	"github.com/shubhdevelop/YAKVS/parser"
 	"github.com/shubhdevelop/YAKVS/store"
 	"github.com/shubhdevelop/YAKVS/utils"
 )
@@ -61,7 +62,7 @@ func runPrompt() {
 					log.Fatalf("failed to write to AOF file: %v", err)
 				}
 			}
-			ExecuteCommand(command)
+			ExecuteCommand(command, kvStore)
 		}
 	}
 }
@@ -80,7 +81,9 @@ func init() {
 func main() {
 	fmt.Println("YAKVS")
 	// Read and execute commands from AOF file
-	err := aofManager.ReadAndExecuteCommands(ExecuteCommand)
+	err := aofManager.ReadAndExecuteCommands(func(cmd *parser.Command) {
+		ExecuteCommand(cmd, kvStore)
+	})
 	if err != nil {
 		log.Fatalf("Error reading AOF file: %v", err)
 	}
