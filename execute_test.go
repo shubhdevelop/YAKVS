@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -156,11 +157,9 @@ func TestExecuteCommand(t *testing.T) {
 			},
 			verify: func(s *store.Store) {
 				ttl := s.GetTTL("testkey")
-				// TTL should be approximately 3600 seconds from now
-				expectedMin := time.Now().Unix() + 3600 - 1
-				expectedMax := time.Now().Unix() + 3600 + 1
-				if ttl < int(expectedMin) || ttl > int(expectedMax) {
-					t.Errorf("Expected TTL to be around %d, got %d", time.Now().Unix()+3600, ttl)
+				// TTL should be approximately 3600 seconds remaining
+				if ttl < 3599 || ttl > 3601 {
+					t.Errorf("Expected TTL to be around 3600 seconds, got %d", ttl)
 				}
 			},
 		},
@@ -199,16 +198,16 @@ func TestExecuteCommand(t *testing.T) {
 			name: "EXPIREAT command - valid timestamp",
 			command: &parser.Command{
 				Name: "EXPIREAT",
-				Args: []string{"testkey", "1735689600"}, // Jan 1, 2025 00:00:00 UTC
+				Args: []string{"testkey", fmt.Sprintf("%d", time.Now().Unix()+3600)}, // 1 hour from now
 			},
 			setup: func(s *store.Store) {
 				s.SetValue("testkey", "testvalue")
 			},
 			verify: func(s *store.Store) {
 				ttl := s.GetTTL("testkey")
-				// Should be set to the exact timestamp
-				if ttl != 1735689600 {
-					t.Errorf("Expected TTL to be 1735689600, got %d", ttl)
+				// Should return remaining seconds until the timestamp (around 3600)
+				if ttl < 3599 || ttl > 3601 {
+					t.Errorf("Expected TTL to be around 3600 seconds, got %d", ttl)
 				}
 			},
 		},
@@ -216,7 +215,7 @@ func TestExecuteCommand(t *testing.T) {
 			name: "EXPIREAT command - non-existing key",
 			command: &parser.Command{
 				Name: "EXPIREAT",
-				Args: []string{"nonexistent", "1735689600"},
+				Args: []string{"nonexistent", fmt.Sprintf("%d", time.Now().Unix()+3600)},
 			},
 			verify: func(s *store.Store) {
 				// Should not set TTL for non-existing key
@@ -240,6 +239,29 @@ func TestExecuteCommand(t *testing.T) {
 				ttl := s.GetTTL("testkey")
 				if ttl != -1 {
 					t.Errorf("Expected TTL to be -1 (no expiry), got %d", ttl)
+				}
+			},
+		},
+		{
+			name: "TTL command - expired key (automatic cleanup)",
+			command: &parser.Command{
+				Name: "TTL",
+				Args: []string{"expiredkey"},
+			},
+			setup: func(s *store.Store) {
+				s.SetValue("expiredkey", "testvalue")
+				// Set expiry to a past timestamp to simulate expired key
+				s.SetTTL("expiredkey", time.Now().Unix()-3600) // 1 hour ago
+			},
+			verify: func(s *store.Store) {
+				// Key should be automatically deleted when expired
+				ttl := s.GetTTL("expiredkey")
+				if ttl != -2 {
+					t.Errorf("Expected TTL to be -2 (key doesn't exist - expired), got %d", ttl)
+				}
+				// Key should not exist in the store
+				if s.Exists("expiredkey") {
+					t.Error("Expected expired key to be automatically deleted")
 				}
 			},
 		},
