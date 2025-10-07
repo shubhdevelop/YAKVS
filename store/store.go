@@ -69,7 +69,7 @@ func (s *Store) DeleteValue(key string) bool {
 }
 
 func (s *Store) Exists(key string) bool {
-	_, exists := (*s.Dict)[key]
-	return exists
+	obj, exists := (*s.Dict)[key]
+	return exists && obj.refcount > 0
 }
 
