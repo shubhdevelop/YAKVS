@@ -23,6 +23,7 @@ A Redis-compatible in-memory key-value store written in Go, implementing the RES
   - `TTL key` - Get remaining time-to-live for a key (returns `:seconds` or `:-1`/`:-2`)
   - `EXPIRE key seconds` - Set expiration for a key (returns `+OK` or `:0`)
   - `EXPIREAT key timestamp` - Set expiration using Unix timestamp (returns `+OK` or `:0`)
+  - `PERSIST key` - Remove expiration from a key (returns `:1` or `:0`)
 
 - **Advanced TTL Features**:
   - **Automatic Expiration**: Expired keys are automatically deleted when accessed
@@ -162,6 +163,7 @@ YAKVS now returns proper RESP protocol responses for all commands:
 - `GET`: Returns `$<length>\r\n<value>\r\n` or `$-1\r` for nil
 - `EXISTS`: Returns `:1` (true) or `:0` (false)
 - `TTL`: Returns `:<remaining_seconds>` or `:-1` (no expiry) or `:-2` (key doesn't exist/expired)
+- `PERSIST`: Returns `:1` (success) or `:0` (key doesn't exist or no TTL)
 
 **TTL Response Details:**
 - `:<positive_number>`: Remaining seconds until expiration

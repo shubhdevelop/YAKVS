@@ -185,6 +185,40 @@ false
 :0
 ```
 
+### PERSIST
+
+**Syntax:** `PERSIST key`
+
+**Description:** Removes the expiration from a key, making it persistent (no TTL).
+
+**Arguments:**
+- `key` (string): The key to make persistent
+
+**Returns:**
+- `:1` - Successfully removed expiration
+- `:0` - Key doesn't exist or has no expiration set
+
+**Behavior:**
+- **Removes TTL**: Key becomes persistent and won't expire
+- **Safe Operation**: Works on keys with or without existing TTL
+- **Memory Efficient**: Removes key from expiry tracking
+
+**Example:**
+```
+>> SET mykey "value"
++OK
+>> EXPIRE mykey 3600
++OK
+>> TTL mykey
+:3599
+>> PERSIST mykey
+:1
+>> TTL mykey
+:-1
+>> PERSIST nonexistent
+:0
+```
+
 ## Command Syntax
 
 ### Interactive Mode
@@ -257,6 +291,12 @@ false
 # Check TTL for expired key (automatically cleaned up)
 >> TTL expired_key
 :-2
+
+# Make a key persistent (remove TTL)
+>> PERSIST session
+:1
+>> TTL session
+:-1
 ```
 
 ### Complete Workflow Example
@@ -284,6 +324,12 @@ false
 Alice
 >> GET user:2
 Bob
+
+# Make user:1 persistent (remove TTL)
+>> PERSIST user:1
+:1
+>> TTL user:1
+:-1
 
 # Delete user:2
 >> DEL user:2
