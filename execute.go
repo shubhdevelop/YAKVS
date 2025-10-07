@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/shubhdevelop/YAKVS/parser"
 )
 
@@ -16,5 +17,7 @@ func ExecuteCommand(command *parser.Command) {
 		kvStore.DeleteValue(command.Args[0])
 	case "EXISTS":
 		fmt.Println(kvStore.Exists(command.Args[0]))
+	case "TTL":
+		fmt.Println(kvStore.GetTTL(command.Args[0]))
 	}
 }

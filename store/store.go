@@ -2,7 +2,7 @@ package store
 
 type KvObjectDict map[string]kvObj
 
-type ExpiryDict map[string]int
+type ExpiryDict map[string]int64  // Separate expires dictionary: key -> unix_timestamp
 
 type Store struct {
 	Dict   *KvObjectDict
@@ -13,6 +13,10 @@ type StoreInterface interface {
 	GetValue(key string) interface{}
 	SetValue(key string, value interface{})
 	DeleteValue(key string) bool
+	Exists(key string) bool
+	GetTTL(key string) int
+	SetTTL(key string, ttl int) bool
+	RemoveExpiry(key string) bool
 }
 
 func NewStore() *Store {
@@ -71,5 +75,44 @@ func (s *Store) DeleteValue(key string) bool {
 func (s *Store) Exists(key string) bool {
 	obj, exists := (*s.Dict)[key]
 	return exists && obj.refcount > 0
+}
+
+func (s *Store) GetTTL(key string) int {
+	// First check if the key exists in the main dictionary
+	if _, exists := (*s.Dict)[key]; !exists {
+		return -2 // Key doesn't exist
+	}
+	
+	// Check if key has expiry set
+	ttl, hasExpiry := (*s.Expiry)[key]
+	if !hasExpiry {
+		return -1 // Key exists but has no expiry
+	}
+	
+	return int(ttl)
+}
+
+// SetTTL sets the time-to-live for a key in seconds
+func (s *Store) SetTTL(key string, ttl int64) bool {
+	// Check if the key exists in the main dictionary
+	if _, exists := (*s.Dict)[key]; !exists {
+		return false // Key doesn't exist
+	}
+	
+	// Set the expiry
+	(*s.Expiry)[key] = ttl
+	return true
+}
+
+// RemoveExpiry removes the TTL from a key, making it persistent
+func (s *Store) RemoveExpiry(key string) bool {
+	// Check if the key exists in the main dictionary
+	if _, exists := (*s.Dict)[key]; !exists {
+		return false // Key doesn't exist
+	}
+	
+	// Remove from expiry dictionary
+	delete(*s.Expiry, key)
+	return true
 }
 
