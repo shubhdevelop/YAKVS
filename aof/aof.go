@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+
 	"github.com/shubhdevelop/YAKVS/parser"
 )
 
@@ -110,6 +111,8 @@ func (aof *AOFManager) ShouldPersistCommand(commandName string) bool {
 	persistentCommands := map[string]bool{
 		"SET": true,
 		"DEL": true,
+		"EXPIRE": true,
+		"EXPIREAT": true,
 		// Add more commands that modify data as needed
 	}
 	return persistentCommands[commandName]
