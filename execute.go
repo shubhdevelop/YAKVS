@@ -95,5 +95,16 @@ func ExecuteCommand(command *parser.Command, store *store.Store) {
 		} else {
 			fmt.Println(":0\r")
 		}
+	case "PERSIST":
+		if len(command.Args) < 1 {
+			fmt.Println("Error: PERSIST requires 1 argument (key)")
+			return
+		}
+		success := store.RemoveExpiry(command.Args[0])
+		if success {
+			fmt.Println("+OK\r")
+		} else {
+			fmt.Println(":0\r")
+		}
 	}
 }

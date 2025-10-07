@@ -72,11 +72,11 @@ func ToRESP(command string) (string, error) {
 		return respBuilder.String(), nil
 	
 	// all uppercase commands or all lowercase commands both are valid
-	case "GET", "DEL", "EXISTS", "TTL" : 
+	case "GET", "DEL", "EXISTS", "TTL" , "PERSIST": 
 		if len(parts) < 2 {
 			return "", fmt.Errorf("%s command requires at least one key", cmd)
 		}
-		// For GET, DEL, EXISTS, TTL, the number of arguments is 1 (command) + number of keys
+		// For GET, DEL, EXISTS, TTL, PERSIST, the number of arguments is 1 (command) + number of keys
 		respBuilder.WriteString(fmt.Sprintf("*%d\r\n", len(parts)))
 		for _, part := range parts {
 			respBuilder.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(part), part))
