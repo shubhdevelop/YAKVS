@@ -1,5 +1,7 @@
 package store
 
+import "time"
+
 type KvObjectDict map[string]kvObj
 
 type ExpiryDict map[string]int64  // Separate expires dictionary: key -> unix_timestamp
@@ -61,12 +63,9 @@ func (s *Store) SetValue(key string, value interface{}) {
 
 func (s *Store) DeleteValue(key string) bool {
 	if obj, exists := (*s.Dict)[key]; exists {
-		/* 
-		Doing this will remove the key from the dictionary, ideally we should decrement 
-		the refcount and later batch remove the keys with refcount 0 
-		*/
-		obj.refcount = 0
-		(*s.Dict)[key] = obj
+		obj.refcount = 0 // we can remove the key from the dictionary
+		delete(*s.Dict, key)
+		delete(*s.Expiry, key)
 		return true
 	}
 	return false
@@ -78,9 +77,8 @@ func (s *Store) Exists(key string) bool {
 }
 
 func (s *Store) GetTTL(key string) int {
-	// First check if the key exists in the main dictionary
 	if _, exists := (*s.Dict)[key]; !exists {
-		return -2 // Key doesn't exist
+		return -2 // Key doesn't exist at all
 	}
 	
 	// Check if key has expiry set
@@ -89,7 +87,16 @@ func (s *Store) GetTTL(key string) int {
 		return -1 // Key exists but has no expiry
 	}
 	
-	return int(ttl)
+	// calculate the time difference between the current time and the expiry time
+	timeDiff := time.Until(time.Unix(ttl, 0))
+
+	if timeDiff.Seconds() < 0 {
+		delete(*s.Expiry, key)
+		delete(*s.Dict, key)
+		return -2 // Key has expired
+	}
+
+	return int(timeDiff.Seconds())
 }
 
 // SetTTL sets the time-to-live for a key in seconds
