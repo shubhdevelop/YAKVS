@@ -102,7 +102,7 @@ func ExecuteCommand(command *parser.Command, store *store.Store) {
 		}
 		success := store.RemoveExpiry(command.Args[0])
 		if success {
-			fmt.Println("+OK\r")
+			fmt.Println(":1\r")
 		} else {
 			fmt.Println(":0\r")
 		}

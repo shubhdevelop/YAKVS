@@ -265,6 +265,63 @@ func TestExecuteCommand(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "PERSIST command - key with TTL",
+			command: &parser.Command{
+				Name: "PERSIST",
+				Args: []string{"testkey"},
+			},
+			setup: func(s *store.Store) {
+				s.SetValue("testkey", "testvalue")
+				s.SetTTL("testkey", time.Now().Unix()+3600) // 1 hour from now
+			},
+			verify: func(s *store.Store) {
+				// TTL should be -1 (no expiry) after PERSIST
+				ttl := s.GetTTL("testkey")
+				if ttl != -1 {
+					t.Errorf("Expected TTL to be -1 (no expiry), got %d", ttl)
+				}
+				// Key should still exist
+				if !s.Exists("testkey") {
+					t.Error("Expected key to still exist after PERSIST")
+				}
+			},
+		},
+		{
+			name: "PERSIST command - key without TTL",
+			command: &parser.Command{
+				Name: "PERSIST",
+				Args: []string{"testkey"},
+			},
+			setup: func(s *store.Store) {
+				s.SetValue("testkey", "testvalue")
+				// No TTL set
+			},
+			verify: func(s *store.Store) {
+				// TTL should still be -1 (no expiry)
+				ttl := s.GetTTL("testkey")
+				if ttl != -1 {
+					t.Errorf("Expected TTL to be -1 (no expiry), got %d", ttl)
+				}
+				// Key should still exist
+				if !s.Exists("testkey") {
+					t.Error("Expected key to still exist after PERSIST")
+				}
+			},
+		},
+		{
+			name: "PERSIST command - non-existing key",
+			command: &parser.Command{
+				Name: "PERSIST",
+				Args: []string{"nonexistent"},
+			},
+			verify: func(s *store.Store) {
+				// Key should not exist
+				if s.Exists("nonexistent") {
+					t.Error("Expected key to not exist")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
