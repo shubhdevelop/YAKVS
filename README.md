@@ -24,6 +24,7 @@ A Redis-compatible in-memory key-value store written in Go, implementing the RES
   - `EXPIRE key seconds` - Set expiration for a key (returns `+OK` or `:0`)
   - `EXPIREAT key timestamp` - Set expiration using Unix timestamp (returns `+OK` or `:0`)
   - `PERSIST key` - Remove expiration from a key (returns `:1` or `:0`)
+  - `BGSAVE` - Start background save of the database (returns `+OK`)
 
 - **Advanced TTL Features**:
   - **Automatic Expiration**: Expired keys are automatically deleted when accessed
@@ -42,16 +43,38 @@ A Redis-compatible in-memory key-value store written in Go, implementing the RES
 
 ### 🏗️ Architecture
 
-The project follows a modular architecture with clear separation of concerns:
+The project follows a modular, command-based architecture with clear separation of concerns. Each command is implemented as a separate module following the Command Pattern, providing better maintainability and extensibility:
+
+#### 🎯 Architecture Benefits
+
+- **Command Pattern**: Each command is encapsulated in its own struct with a consistent Execute() method
+- **Separation of Concerns**: Commands are isolated from parsing, storage, and persistence logic
+- **Easy Extensibility**: Adding new commands requires minimal changes to existing code
+- **Maintainability**: Each command can be modified independently without affecting others
+- **Testability**: Individual commands can be unit tested in isolation
+- **Consistent Interface**: All commands follow the same pattern for predictable behavior
 
 ```
 YAKVS/
 ├── aof/                    # AOF persistence module
 │   └── aof.go             # AOF file management
+├── command/                # Command implementations
+│   ├── BgsaveCommand.go   # BGSAVE command handler
+│   ├── Del.go             # DEL command handler
+│   ├── Exists.go          # EXISTS command handler
+│   ├── Expire.go          # EXPIRE command handler
+│   ├── ExpireAt.go        # EXPIREAT command handler
+│   ├── Get.go             # GET command handler
+│   ├── Persist.go         # PERSIST command handler
+│   ├── Set.go             # SET command handler
+│   └── Ttl.go             # TTL command handler
 ├── parser/                 # RESP protocol parser
 │   ├── parser.go          # Streaming parser implementation
 │   └── parser_test.go     # Comprehensive test suite
+├── snapshot/               # Snapshot functionality
+│   └── snapshot.go        # Snapshot operations
 ├── store/                  # Key-value storage
+│   ├── kvObj.go           # Key-value object definitions
 │   └── store.go           # In-memory store with interface
 ├── utils/                  # Utility functions
 │   └── utils.go           # RESP conversion and validation
@@ -61,6 +84,13 @@ YAKVS/
 ```
 
 ### 📦 Modules
+
+#### Command Module (`command/`)
+- **Command Pattern Implementation**: Each command is a separate struct with Execute() method
+- **Command Handlers**: Individual files for each command (SET, GET, DEL, etc.)
+- **Command Metadata**: Each command includes syntax, help text, and examples
+- **Extensible Design**: Easy to add new commands by creating new command files
+- **Consistent Interface**: All commands follow the same pattern for maintainability
 
 #### AOF Module (`aof/`)
 - **AOFManager**: Centralized AOF file operations
@@ -80,6 +110,11 @@ YAKVS/
 - **NewStore()**: Constructor for store instances
 - **CRUD Operations**: GetValue, SetValue, DeleteValue, Exists
 - **StoreInterface**: Interface for future extensibility
+
+#### Snapshot Module (`snapshot/`)
+- **Snapshot Operations**: Background save functionality
+- **Start()**: Initialize snapshot process
+- **Future Extensions**: Planned for RDB-style snapshots
 
 #### Utils Module (`utils/`)
 - **ToRESP()**: Convert plain text commands to RESP format
@@ -211,19 +246,72 @@ go test ./store -v
 
 ### Adding New Commands
 
-1. **Add command logic in `execute.go`**:
+The new command-based architecture makes adding commands much easier and more maintainable:
+
+1. **Create a new command file** in `command/` directory (e.g., `NewCommand.go`):
    ```go
-   case "NEWCOMMAND":
-       // Implementation
+   package command
+
+   import (
+       "fmt"
+       "github.com/shubhdevelop/YAKVS/parser"
+       "github.com/shubhdevelop/YAKVS/store"
+   )
+
+   // NewCommand handles the NEWCOMMAND command
+   type NewCommand struct {
+       Command *parser.Command
+       Store   *store.Store
+   }
+
+   // NewNewCommand creates a new NEWCOMMAND command instance
+   func NewNewCommand(cmd *parser.Command, store *store.Store) *NewCommand {
+       return &NewCommand{
+           Command: cmd,
+           Store:   store,
+       }
+   }
+
+   // Execute executes the NEWCOMMAND command
+   func (nc *NewCommand) Execute() {
+       // Implementation here
+       fmt.Println("+OK\r")
+   }
+
+   // Command metadata (optional but recommended)
+   type NewCommandMeta struct {
+       Name      string
+       Syntax    string
+       HelpShort string
+       HelpLong  string
+       Examples  string
+   }
+
+   func NewMeta() *NewCommandMeta {
+       return &NewCommandMeta{
+           Name:      "NEWCOMMAND",
+           Syntax:    "NEWCOMMAND arg1 arg2",
+           HelpShort: "NEWCOMMAND does something useful",
+           HelpLong:  "Detailed description...",
+           Examples:  ">> NEWCOMMAND arg1 arg2\n+OK",
+       }
+   }
    ```
 
-2. **Update `utils/utils.go`** to support command conversion:
+2. **Add command to `execute.go`**:
+   ```go
+   case "NEWCOMMAND":
+       newCmd := command.NewNewCommand(cmd, store)
+       newCmd.Execute()
+   ```
+
+3. **Update `utils/utils.go`** to support command conversion:
    ```go
    case "NEWCOMMAND":
        // Add to ToRESP() function
    ```
 
-3. **Add to persistent commands** in `aof/aof.go`:
+4. **Add to persistent commands** in `aof/aof.go` (if needed):
    ```go
    persistentCommands := map[string]bool{
        "NEWCOMMAND": true,
@@ -249,6 +337,8 @@ go test ./store -v
 - [x] Interactive Command Line Interface
 - [x] Command Conversion (Plain Text → RESP)
 - [x] Modular Architecture
+- [x] Command Pattern Implementation
+- [x] BGSAVE Command Support
 - [x] Comprehensive Testing
 - [x] Error Handling
 
