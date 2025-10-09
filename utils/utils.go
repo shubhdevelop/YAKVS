@@ -49,6 +49,15 @@ func ToRESP(command string) (string, error) {
 	var respBuilder strings.Builder
 
 	switch cmd {
+	case "BGSAVE":
+		if len(parts) > 1 {
+			return "", fmt.Errorf("%s Command doesn't take any additional parameter", cmd)
+		}
+		respBuilder.WriteString(fmt.Sprintf("*%d\r\n", len(parts)))
+		for _, part := range parts {
+			respBuilder.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(part), part))
+		}
+		return respBuilder.String(), nil
 	case "EXPIRE", "EXPIREAT":
 		if len(parts) < 3 {
 			return "", fmt.Errorf("%s command requires at least two arguments: key and TTL", cmd)
@@ -59,7 +68,7 @@ func ToRESP(command string) (string, error) {
 			respBuilder.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(part), part))
 		}
 		return respBuilder.String(), nil
-	case "SET" :
+	case "SET":
 		// SET key value [EX seconds] [PX milliseconds] [NX|XX]
 		if len(parts) < 3 {
 			return "", fmt.Errorf("SET command requires at least a key and a value")
@@ -70,9 +79,9 @@ func ToRESP(command string) (string, error) {
 			respBuilder.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(part), part))
 		}
 		return respBuilder.String(), nil
-	
+
 	// all uppercase commands or all lowercase commands both are valid
-	case "GET", "DEL", "EXISTS", "TTL" , "PERSIST": 
+	case "GET", "DEL", "EXISTS", "TTL", "PERSIST":
 		if len(parts) < 2 {
 			return "", fmt.Errorf("%s command requires at least one key", cmd)
 		}
