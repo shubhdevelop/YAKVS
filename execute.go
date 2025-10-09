@@ -7,12 +7,21 @@ import (
 	"time"
 
 	"github.com/shubhdevelop/YAKVS/parser"
+	"github.com/shubhdevelop/YAKVS/snapshot"
 	"github.com/shubhdevelop/YAKVS/store"
 )
 
 func ExecuteCommand(command *parser.Command, store *store.Store) {
 	fmt.Println("Executing command:", command)
 	switch strings.ToUpper(command.Name) {
+	case "BGSAVE":
+		if len(command.Args) > 0 {
+			fmt.Println("Error: BGSAVE doesn't require any arguments")
+		}
+
+		fmt.Println("snapshot started")
+		snapshot.Start()
+		fmt.Println("+OK\r")
 	case "SET":
 		if len(command.Args) < 2 {
 			fmt.Println("Error: SET requires 2 arguments (key, value)")
@@ -108,3 +117,4 @@ func ExecuteCommand(command *parser.Command, store *store.Store) {
 		}
 	}
 }
+
