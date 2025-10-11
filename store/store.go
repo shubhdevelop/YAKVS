@@ -156,7 +156,11 @@ func (s *Store) IncreBy(key string, value int) (int, error) {
 		*(*int)(obj.ptr) += value
 		return  *(*int)(obj.ptr), nil 
 	}
-	return 0, errors.New("key doesn't exist")
+	// Key doesn't exist, create it with value 0 and then increment
+	kvObj := createIntObj(0)
+	(*s.Dict)[key] = *kvObj
+	*(*int)(kvObj.ptr) += value
+	return *(*int)(kvObj.ptr), nil
 }
 
 func (s *Store) DecreBy(key string, value int) (int, error) {
@@ -168,5 +172,9 @@ func (s *Store) DecreBy(key string, value int) (int, error) {
 		*(*int)(obj.ptr) -= value
 			return 	*(*int)(obj.ptr) , nil
 	}
-	return 0, errors.New("key doesn't exist")
+	// Key doesn't exist, create it with value 0 and then decrement
+	kvObj := createIntObj(0)
+	(*s.Dict)[key] = *kvObj
+	*(*int)(kvObj.ptr) -= value
+	return *(*int)(kvObj.ptr), nil
 }
