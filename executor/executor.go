@@ -1,4 +1,4 @@
-package main
+package executor
 
 import (
 	"fmt"
@@ -39,7 +39,6 @@ func ExecuteCommand(cmd *parser.Command, store *store.Store) {
 	case "PERSIST":
 		persistCmd := command.NewPersistCommand(cmd, store)
 		persistCmd.Execute()
-			return
 	case "INCRBY":
 		incrByCmd := command.NewIncreByCommand(cmd, store)
 		incrByCmd.Execute()
@@ -54,6 +53,8 @@ func ExecuteCommand(cmd *parser.Command, store *store.Store) {
 		decrByCmd.Execute()
 	}
 }
+
+
 
 
 func ExecuteCommandIntegration(cmd *parser.Command, store *store.Store) {
