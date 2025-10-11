@@ -46,8 +46,15 @@ func ExecuteCommand(cmd *parser.Command, store *store.Store) {
 	case "DECRBY":
 		decrByCmd := command.NewDecreByCommand(cmd, store)
 		decrByCmd.Execute()
+	case "INCR":
+		incrByCmd := command.NewIncrCommand(cmd, store)
+		incrByCmd.Execute()
+	case "DECR":
+		decrByCmd := command.NewDecrCommand(cmd, store)
+		decrByCmd.Execute()
 	}
 }
+
 
 func ExecuteCommandIntegration(cmd *parser.Command, store *store.Store) {
 	fmt.Println("Executing command:", cmd)
@@ -82,6 +89,12 @@ func ExecuteCommandIntegration(cmd *parser.Command, store *store.Store) {
 		incrByCmd.Execute()
 	case "DECRBY":
 		decrByCmd := command.NewDecreByCommand(cmd, store)
+		decrByCmd.Execute()
+	case "INCR":
+		incrByCmd := command.NewIncrCommand(cmd, store)
+		incrByCmd.Execute()
+	case "DECR":
+		decrByCmd := command.NewDecrCommand(cmd, store)
 		decrByCmd.Execute()
 	}
 }
