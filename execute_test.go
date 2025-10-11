@@ -435,3 +435,109 @@ func TestExecuteCommandEdgeCases(t *testing.T) {
 		}, testStore)
 	})
 }
+
+func TestNumericValueEncoding(t *testing.T) {
+	testStore := store.NewStore()
+
+	t.Run("SET numeric value as string should be stored as integer", func(t *testing.T) {
+		// Set a numeric value as string
+		testStore.SetValue("numkey", "123")
+		
+		// Verify it's stored as integer
+		value := testStore.GetValue("numkey")
+		if value == nil {
+			t.Error("Expected value to be set, got nil")
+		}
+		
+		// Check if it's an integer
+		if intVal, ok := value.(int); !ok {
+			t.Errorf("Expected integer value, got %T: %v", value, value)
+		} else if intVal != 123 {
+			t.Errorf("Expected 123, got %d", intVal)
+		}
+	})
+
+	t.Run("SET non-numeric string should be stored as string", func(t *testing.T) {
+		// Set a non-numeric value
+		testStore.SetValue("strkey", "hello")
+		
+		// Verify it's stored as string
+		value := testStore.GetValue("strkey")
+		if value == nil {
+			t.Error("Expected value to be set, got nil")
+		}
+		
+		// Check if it's a string
+		if strVal, ok := value.(string); !ok {
+			t.Errorf("Expected string value, got %T: %v", value, value)
+		} else if strVal != "hello" {
+			t.Errorf("Expected 'hello', got %s", strVal)
+		}
+	})
+
+	t.Run("SET negative number should be stored as integer", func(t *testing.T) {
+		// Set a negative numeric value as string
+		testStore.SetValue("negkey", "-456")
+		
+		// Verify it's stored as integer
+		value := testStore.GetValue("negkey")
+		if value == nil {
+			t.Error("Expected value to be set, got nil")
+		}
+		
+		// Check if it's an integer
+		if intVal, ok := value.(int); !ok {
+			t.Errorf("Expected integer value, got %T: %v", value, value)
+		} else if intVal != -456 {
+			t.Errorf("Expected -456, got %d", intVal)
+		}
+	})
+
+	t.Run("SET zero should be stored as integer", func(t *testing.T) {
+		// Set zero as string
+		testStore.SetValue("zerokey", "0")
+		
+		// Verify it's stored as integer
+		value := testStore.GetValue("zerokey")
+		if value == nil {
+			t.Error("Expected value to be set, got nil")
+		}
+		
+		// Check if it's an integer
+		if intVal, ok := value.(int); !ok {
+			t.Errorf("Expected integer value, got %T: %v", value, value)
+		} else if intVal != 0 {
+			t.Errorf("Expected 0, got %d", intVal)
+		}
+	})
+}
+
+func TestIncrByWithNumericEncoding(t *testing.T) {
+	testStore := store.NewStore()
+
+	t.Run("INCRBY should work with numeric values stored as integers", func(t *testing.T) {
+		// First set a numeric value (which should be stored as integer)
+		testStore.SetValue("numkey", "10")
+		
+		// Verify it's stored as integer
+		value := testStore.GetValue("numkey")
+		if intVal, ok := value.(int); !ok || intVal != 10 {
+			t.Errorf("Expected integer 10, got %T: %v", value, value)
+		}
+		
+		// Now test INCRBY
+		result, err := testStore.IncreBy("numkey", 5)
+		if err != nil {
+			t.Errorf("INCRBY failed: %v", err)
+		}
+		if result != 15 {
+			t.Errorf("Expected 15, got %d", result)
+		}
+		
+		// Verify the value was updated
+		updatedValue := testStore.GetValue("numkey")
+		if intVal, ok := updatedValue.(int); !ok || intVal != 15 {
+			t.Errorf("Expected integer 15, got %T: %v", updatedValue, updatedValue)
+		}
+	})
+}
