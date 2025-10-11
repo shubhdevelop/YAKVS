@@ -26,6 +26,12 @@ A Redis-compatible in-memory key-value store written in Go, implementing the RES
   - `PERSIST key` - Remove expiration from a key (returns `:1` or `:0`)
   - `BGSAVE` - Start background save of the database (returns `+OK`)
 
+- **Numeric Commands**:
+  - `INCR key` - Increment a numeric key by 1 (returns `:new_value`)
+  - `DECR key` - Decrement a numeric key by 1 (returns `:new_value`)
+  - `INCRBY key increment` - Increment a numeric key by specified amount (returns `:new_value`)
+  - `DECRBY key decrement` - Decrement a numeric key by specified amount (returns `:new_value`)
+
 - **Advanced TTL Features**:
   - **Automatic Expiration**: Expired keys are automatically deleted when accessed
   - **Dynamic TTL Calculation**: TTL returns actual remaining seconds until expiration
@@ -60,11 +66,15 @@ YAKVS/
 │   └── aof.go             # AOF file management
 ├── command/                # Command implementations
 │   ├── BgsaveCommand.go   # BGSAVE command handler
+│   ├── Decr.go            # DECR command handler
+│   ├── DecrBy.go          # DECRBY command handler
 │   ├── Del.go             # DEL command handler
 │   ├── Exists.go          # EXISTS command handler
 │   ├── Expire.go          # EXPIRE command handler
 │   ├── ExpireAt.go        # EXPIREAT command handler
 │   ├── Get.go             # GET command handler
+│   ├── Incr.go            # INCR command handler
+│   ├── IncrBy.go          # INCRBY command handler
 │   ├── Persist.go         # PERSIST command handler
 │   ├── Set.go             # SET command handler
 │   └── Ttl.go             # TTL command handler
@@ -172,6 +182,22 @@ Executing command: &{Name:DEL Args:[mykey]}
 Parsing RESP command: *2\r\n$6\r\nEXISTS\r\n$5\r\nmykey\r\n
 Executing command: &{Name:EXISTS Args:[mykey]}
 :0
+>> INCR counter
+Parsing RESP command: *2\r\n$4\r\nINCR\r\n$7\r\ncounter\r\n
+Executing command: &{Name:INCR Args:[counter]}
+:1
+>> INCRBY counter 5
+Parsing RESP command: *3\r\n$6\r\nINCRBY\r\n$7\r\ncounter\r\n$1\r\n5\r\n
+Executing command: &{Name:INCRBY Args:[counter 5]}
+:6
+>> DECR counter
+Parsing RESP command: *2\r\n$4\r\nDECR\r\n$7\r\ncounter\r\n
+Executing command: &{Name:DECR Args:[counter]}
+:5
+>> DECRBY counter 2
+Parsing RESP command: *3\r\n$6\r\nDECRBY\r\n$7\r\ncounter\r\n$1\r\n2\r\n
+Executing command: &{Name:DECRBY Args:[counter 2]}
+:3
 >> exit
 ```
 
@@ -199,6 +225,7 @@ YAKVS now returns proper RESP protocol responses for all commands:
 - `EXISTS`: Returns `:1` (true) or `:0` (false)
 - `TTL`: Returns `:<remaining_seconds>` or `:-1` (no expiry) or `:-2` (key doesn't exist/expired)
 - `PERSIST`: Returns `:1` (success) or `:0` (key doesn't exist or no TTL)
+- `INCR`, `DECR`, `INCRBY`, `DECRBY`: Return `:<new_value>` with the updated numeric value
 
 **TTL Response Details:**
 - `:<positive_number>`: Remaining seconds until expiration
@@ -216,6 +243,14 @@ value
 :1
 >> TTL key
 :-1
+>> INCR counter
+:1
+>> INCRBY counter 5
+:6
+>> DECR counter
+:5
+>> DECRBY counter 2
+:3
 >> DEL key
 +OK
 ```
@@ -331,6 +366,7 @@ The new command-based architecture makes adding commands much easier and more ma
 
 - [x] RESP Protocol Parser
 - [x] Core Key-Value Operations
+- [x] Numeric Operations (INCR, DECR, INCRBY, DECRBY)
 - [x] RESP Response Format (Redis-compatible)
 - [x] TTL and Expiration Support
 - [x] AOF Persistence

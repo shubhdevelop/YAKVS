@@ -6,6 +6,7 @@ This document provides a comprehensive guide to all available commands in YAKVS 
 
 - [Getting Started](#getting-started)
 - [Basic Commands](#basic-commands)
+- [Numeric Commands](#numeric-commands)
 - [TTL and Expiration Commands](#ttl-and-expiration-commands)
 - [Command Syntax](#command-syntax)
 - [Examples](#examples)
@@ -104,6 +105,134 @@ nil
 true
 >> EXISTS nonexistent
 false
+```
+
+## Numeric Commands
+
+YAKVS supports numeric operations for integer values. These commands automatically handle numeric encoding and provide atomic operations.
+
+### INCR
+
+**Syntax:** `INCR key`
+
+**Description:** Increments the integer value of a key by 1. If the key doesn't exist, it's initialized to 0 before incrementing.
+
+**Arguments:**
+- `key` (string): The key to increment
+
+**Returns:**
+- `:<new_value>` - The new value after incrementing
+
+**Behavior:**
+- **New Key**: Creates key with value 0, then increments to 1
+- **Existing Key**: Increments the current value by 1
+- **Atomic Operation**: Thread-safe increment operation
+- **Integer Only**: Works only with integer values
+
+**Example:**
+```
+>> INCR counter
+:1
+>> INCR counter
+:2
+>> INCR new_counter
+:1
+```
+
+### DECR
+
+**Syntax:** `DECR key`
+
+**Description:** Decrements the integer value of a key by 1. If the key doesn't exist, it's initialized to 0 before decrementing.
+
+**Arguments:**
+- `key` (string): The key to decrement
+
+**Returns:**
+- `:<new_value>` - The new value after decrementing
+
+**Behavior:**
+- **New Key**: Creates key with value 0, then decrements to -1
+- **Existing Key**: Decrements the current value by 1
+- **Atomic Operation**: Thread-safe decrement operation
+- **Integer Only**: Works only with integer values
+
+**Example:**
+```
+>> DECR counter
+:-1
+>> DECR counter
+:-2
+>> DECR new_counter
+:-1
+```
+
+### INCRBY
+
+**Syntax:** `INCRBY key increment`
+
+**Description:** Increments the integer value of a key by the specified amount. If the key doesn't exist, it's initialized to 0 before incrementing.
+
+**Arguments:**
+- `key` (string): The key to increment
+- `increment` (integer): The amount to increment by (can be negative)
+
+**Returns:**
+- `:<new_value>` - The new value after incrementing
+
+**Behavior:**
+- **New Key**: Creates key with value 0, then adds the increment
+- **Existing Key**: Adds the increment to the current value
+- **Negative Increment**: Can be used to decrement (same as DECRBY with positive value)
+- **Zero Increment**: Returns the same value (no change)
+- **Atomic Operation**: Thread-safe increment operation
+
+**Example:**
+```
+>> INCRBY counter 5
+:5
+>> INCRBY counter 3
+:8
+>> INCRBY counter -2
+:6
+>> INCRBY new_counter 10
+:10
+>> INCRBY counter 0
+:6
+```
+
+### DECRBY
+
+**Syntax:** `DECRBY key decrement`
+
+**Description:** Decrements the integer value of a key by the specified amount. If the key doesn't exist, it's initialized to 0 before decrementing.
+
+**Arguments:**
+- `key` (string): The key to decrement
+- `decrement` (integer): The amount to decrement by (can be negative)
+
+**Returns:**
+- `:<new_value>` - The new value after decrementing
+
+**Behavior:**
+- **New Key**: Creates key with value 0, then subtracts the decrement
+- **Existing Key**: Subtracts the decrement from the current value
+- **Negative Decrement**: Can be used to increment (same as INCRBY with positive value)
+- **Zero Decrement**: Returns the same value (no change)
+- **Atomic Operation**: Thread-safe decrement operation
+
+**Example:**
+```
+>> DECRBY counter 3
+:-3
+>> DECRBY counter 2
+:-5
+>> DECRBY counter -4
+:-1
+>> DECRBY new_counter 7
+:-7
+>> DECRBY counter 0
+:-1
 ```
 
 ## TTL and Expiration Commands
@@ -299,6 +428,50 @@ false
 :-1
 ```
 
+### Working with Numeric Values
+
+```bash
+# Basic increment operations
+>> INCR page_views
+:1
+>> INCR page_views
+:2
+>> INCRBY page_views 5
+:7
+
+# Basic decrement operations
+>> DECR stock_count
+:-1
+>> DECR stock_count
+:-2
+>> DECRBY stock_count 3
+:-5
+
+# Working with existing numeric values
+>> SET score 100
++OK
+>> INCR score
+:101
+>> INCRBY score 50
+:151
+>> DECRBY score 25
+:126
+
+# Negative increments/decrements
+>> INCRBY counter -10
+:-10
+>> DECRBY counter -5
+:-5
+>> INCRBY counter 15
+:10
+
+# Zero operations (no change)
+>> INCRBY counter 0
+:10
+>> DECRBY counter 0
+:10
+```
+
 ### Complete Workflow Example
 
 ```bash
@@ -339,6 +512,36 @@ Bob
 false
 >> GET user:2
 nil
+```
+
+### Numeric Operations Workflow
+
+```bash
+# Initialize counters
+>> INCR user:1:visits
+:1
+>> INCRBY user:1:points 100
+:100
+
+# Track multiple metrics
+>> INCRBY user:1:visits 4
+:5
+>> INCRBY user:1:points 50
+:150
+>> DECRBY user:1:points 25
+:125
+
+# Check final values
+>> GET user:1:visits
+5
+>> GET user:1:points
+125
+
+# Reset a counter
+>> DECRBY user:1:visits 5
+:0
+>> INCR user:1:visits
+:1
 ```
 
 ## Automatic Expiration Behavior
@@ -392,6 +595,10 @@ $-1
    Error: TTL requires 1 argument (key)
    Error: EXPIRE requires 2 arguments (key, ttl)
    Error: EXPIREAT requires 2 arguments (key, timestamp)
+   Error: INCR requires 1 argument (key)
+   Error: DECR requires 1 argument (key)
+   Error: INCRBY requires 2 arguments (key, value)
+   Error: DECRBY requires 2 arguments (key, value)
    ```
 
 2. **Invalid TTL/Timestamp:**
@@ -399,7 +606,13 @@ $-1
    Error parsing TTL: strconv.ParseInt: parsing "invalid": invalid syntax
    ```
 
-3. **RESP Parsing Errors:**
+3. **Invalid Numeric Values:**
+   ```
+   Error: INCRBY requires a valid integer value
+   Error: DECRBY requires a valid integer value
+   ```
+
+4. **RESP Parsing Errors:**
    ```
    Error converting to RESP: [error details]
    Error parsing RESP command: [error details]
@@ -459,6 +672,10 @@ YAKVS automatically persists data-modifying commands to the AOF (Append Only Fil
 - `DEL` commands are persisted
 - `EXPIRE` commands are persisted
 - `EXPIREAT` commands are persisted
+- `INCR` commands are persisted
+- `DECR` commands are persisted
+- `INCRBY` commands are persisted
+- `DECRBY` commands are persisted
 
 Read-only commands (`GET`, `EXISTS`, `TTL`) are not persisted.
 
