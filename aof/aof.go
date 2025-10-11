@@ -117,6 +117,8 @@ func (aof *AOFManager) ShouldPersistCommand(commandName string) bool {
 		"PERSIST": true,
 		"INCRBY": true,
 		"DECRBY": true,
+		"INCR": true,
+		"DECR": true,
 		// Add more commands that modify data as needed
 	}
 	return persistentCommands[strings.ToUpper(commandName)]

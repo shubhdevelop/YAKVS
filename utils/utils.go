@@ -81,7 +81,7 @@ func ToRESP(command string) (string, error) {
 		return respBuilder.String(), nil
 
 	// all uppercase commands or all lowercase commands both are valid
-	case "GET", "DEL", "EXISTS", "TTL", "PERSIST":
+	case "GET", "DEL", "EXISTS", "TTL", "PERSIST", "INCR", "DECR":
 		if len(parts) < 2 {
 			return "", fmt.Errorf("%s command requires at least one key", cmd)
 		}
