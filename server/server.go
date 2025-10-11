@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strings"
 
 	"github.com/shubhdevelop/YAKVS/aof"
 	"github.com/shubhdevelop/YAKVS/executor"
@@ -49,10 +48,11 @@ func handleConnection(conn net.Conn, kvStore *store.Store, aofManager *aof.AOFMa
 			continue
 		}
 		fmt.Println("Received message:", line)
-		// resp, err := utils.ToRESP(line)
-		resp := line[:len(line)-1]
-		resp = strings.TrimSpace(resp)
-		resp = utils.PreprocessInput(resp)
+		resp, err := utils.ToRESP(line)
+		if err != nil {
+			fmt.Printf("Error converting to RESP: %v\n", err)
+			continue
+		}
 
 		if utils.IsRESPFormat(resp) {
 			// Preprocess input to convert literal \r\n to actual control characters
@@ -71,6 +71,11 @@ func handleConnection(conn net.Conn, kvStore *store.Store, aofManager *aof.AOFMa
 			}
 		}
 		executor.ExecuteCommand(command, kvStore)
+		fmt.Println("Executed command:", command)
+
+
+		// write the response to the client
+		conn.Write([]byte(line))
 	}
 	}
 }
