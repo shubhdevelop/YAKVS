@@ -29,12 +29,19 @@ func (dc *DelCommand) Execute() {
 	}
 
 	key := dc.Command.Args[0]
-	value := dc.Store.GetValue(key)
 	
-	if value == nil {
+	// Check if key exists before attempting to delete
+	if !dc.Store.Exists(key) {
 		fmt.Println("$-1\r")
-	} else {
+		return
+	}
+	
+	// Actually delete the key
+	deleted := dc.Store.DeleteValue(key)
+	if deleted {
 		fmt.Println("+OK\r")
+	} else {
+		fmt.Println("$-1\r")
 	}
 }
 
