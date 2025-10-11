@@ -40,12 +40,19 @@ func ExecuteCommand(cmd *parser.Command, store *store.Store) {
 		persistCmd := command.NewPersistCommand(cmd, store)
 		persistCmd.Execute()
 			return
+	case "INCRBY":
+		incrByCmd := command.NewIncreByCommand(cmd, store)
+		incrByCmd.Execute()
+	case "DECRBY":
+		decrByCmd := command.NewDecreByCommand(cmd, store)
+		decrByCmd.Execute()
 	}
 }
 
 func ExecuteCommandIntegration(cmd *parser.Command, store *store.Store) {
 	fmt.Println("Executing command:", cmd)
 	switch strings.ToUpper(cmd.Name) {
+
 	case "SET":
 		setCmd := command.NewSetCommand(cmd, store)
 		setCmd.Execute()
@@ -70,6 +77,12 @@ func ExecuteCommandIntegration(cmd *parser.Command, store *store.Store) {
 	case "PERSIST":
 		persistCmd := command.NewPersistCommand(cmd, store)
 		persistCmd.Execute()
+	case "INCRBY":
+		incrByCmd := command.NewIncreByCommand(cmd, store)
+		incrByCmd.Execute()
+	case "DECRBY":
+		decrByCmd := command.NewDecreByCommand(cmd, store)
+		decrByCmd.Execute()
 	}
 }
 
