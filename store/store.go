@@ -1,6 +1,10 @@
 package store
 
-import "time"
+import (
+	"errors"
+	"strconv"
+	"time"
+)
 
 type KvObjectDict map[string]kvObj
 
@@ -19,6 +23,8 @@ type StoreInterface interface {
 	GetTTL(key string) int
 	SetTTL(key string, ttl int) bool
 	RemoveExpiry(key string) bool
+	IncreBy(key string, value int)( int, error)
+	DecreBy(key string, value int) (int, error)
 }
 
 func NewStore() *Store {
@@ -61,8 +67,16 @@ func (s *Store) GetValue(key string) interface{} {
 
 func (s *Store) SetValue(key string, value interface{}) {
 	if strVal, ok := value.(string); ok {
-		kvObj := createStringObj(strVal)
-		(*s.Dict)[key] = *kvObj
+		// Try to convert string to integer first
+		if intVal, err := strconv.Atoi(strVal); err == nil {
+			// It's a valid integer, store as int
+			kvObj := createIntObj(intVal)
+			(*s.Dict)[key] = *kvObj
+		} else {
+			// Not a valid integer, store as string
+			kvObj := createStringObj(strVal)
+			(*s.Dict)[key] = *kvObj
+		}
 	} else if intVal, ok := value.(int); ok {
 		kvObj := createIntObj(intVal)
 		(*s.Dict)[key] = *kvObj
@@ -132,3 +146,27 @@ func (s *Store) RemoveExpiry(key string) bool {
 	return true
 }
 
+func (s *Store) IncreBy(key string, value int) (int, error) {
+	if obj, exists := (*s.Dict)[key]; exists {
+		// check for the encoding must be int
+		if obj.getEncoding() != OBJ_ENCODING_INT {
+			return 0, errors.New("can't increment other value than value of type Int")
+		}
+
+		*(*int)(obj.ptr) += value
+		return  *(*int)(obj.ptr), nil 
+	}
+	return 0, errors.New("key doesn't exist")
+}
+
+func (s *Store) DecreBy(key string, value int) (int, error) {
+	if obj, exists := (*s.Dict)[key]; exists {
+		 // check for the encoding must be int
+		if obj.getEncoding() != OBJ_ENCODING_INT {
+			return 0 , errors.New("can't decrement other value than value of type Int")
+		}
+		*(*int)(obj.ptr) -= value
+			return 	*(*int)(obj.ptr) , nil
+	}
+	return 0, errors.New("key doesn't exist")
+}

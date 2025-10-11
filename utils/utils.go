@@ -68,7 +68,7 @@ func ToRESP(command string) (string, error) {
 			respBuilder.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(part), part))
 		}
 		return respBuilder.String(), nil
-	case "SET":
+	case "SET", "INCRBY", "DECRBY":
 		// SET key value [EX seconds] [PX milliseconds] [NX|XX]
 		if len(parts) < 3 {
 			return "", fmt.Errorf("SET command requires at least a key and a value")
