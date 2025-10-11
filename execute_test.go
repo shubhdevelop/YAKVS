@@ -541,3 +541,383 @@ func TestIncrByWithNumericEncoding(t *testing.T) {
 		}
 	})
 }
+
+func TestIncrCommand(t *testing.T) {
+	tests := []struct {
+		name     string
+		command  *parser.Command
+		setup    func(*store.Store)
+		verify   func(*store.Store)
+	}{
+		{
+			name: "INCR command - new key",
+			command: &parser.Command{
+				Name: "INCR",
+				Args: []string{"newkey"},
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("newkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != 1 {
+					t.Errorf("Expected integer 1, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "INCR command - existing numeric key",
+			command: &parser.Command{
+				Name: "INCR",
+				Args: []string{"existingkey"},
+			},
+			setup: func(s *store.Store) {
+				s.SetValue("existingkey", "5")
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("existingkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != 6 {
+					t.Errorf("Expected integer 6, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "INCR command - insufficient arguments",
+			command: &parser.Command{
+				Name: "INCR",
+				Args: []string{},
+			},
+			verify: func(s *store.Store) {
+				// Should not cause any errors, just print error message
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testStore := store.NewStore()
+			
+			if tt.setup != nil {
+				tt.setup(testStore)
+			}
+
+			ExecuteCommand(tt.command, testStore)
+
+			if tt.verify != nil {
+				tt.verify(testStore)
+			}
+		})
+	}
+}
+
+func TestDecrCommand(t *testing.T) {
+	tests := []struct {
+		name     string
+		command  *parser.Command
+		setup    func(*store.Store)
+		verify   func(*store.Store)
+	}{
+		{
+			name: "DECR command - new key",
+			command: &parser.Command{
+				Name: "DECR",
+				Args: []string{"newkey"},
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("newkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != -1 {
+					t.Errorf("Expected integer -1, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "DECR command - existing numeric key",
+			command: &parser.Command{
+				Name: "DECR",
+				Args: []string{"existingkey"},
+			},
+			setup: func(s *store.Store) {
+				s.SetValue("existingkey", "10")
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("existingkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != 9 {
+					t.Errorf("Expected integer 9, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "DECR command - insufficient arguments",
+			command: &parser.Command{
+				Name: "DECR",
+				Args: []string{},
+			},
+			verify: func(s *store.Store) {
+				// Should not cause any errors, just print error message
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testStore := store.NewStore()
+			
+			if tt.setup != nil {
+				tt.setup(testStore)
+			}
+
+			ExecuteCommand(tt.command, testStore)
+
+			if tt.verify != nil {
+				tt.verify(testStore)
+			}
+		})
+	}
+}
+
+func TestIncrByCommand(t *testing.T) {
+	tests := []struct {
+		name     string
+		command  *parser.Command
+		setup    func(*store.Store)
+		verify   func(*store.Store)
+	}{
+		{
+			name: "INCRBY command - new key with positive increment",
+			command: &parser.Command{
+				Name: "INCRBY",
+				Args: []string{"newkey", "5"},
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("newkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != 5 {
+					t.Errorf("Expected integer 5, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "INCRBY command - existing key with positive increment",
+			command: &parser.Command{
+				Name: "INCRBY",
+				Args: []string{"existingkey", "3"},
+			},
+			setup: func(s *store.Store) {
+				s.SetValue("existingkey", "7")
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("existingkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != 10 {
+					t.Errorf("Expected integer 10, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "INCRBY command - existing key with negative increment",
+			command: &parser.Command{
+				Name: "INCRBY",
+				Args: []string{"existingkey", "-2"},
+			},
+			setup: func(s *store.Store) {
+				s.SetValue("existingkey", "8")
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("existingkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != 6 {
+					t.Errorf("Expected integer 6, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "INCRBY command - zero increment",
+			command: &parser.Command{
+				Name: "INCRBY",
+				Args: []string{"existingkey", "0"},
+			},
+			setup: func(s *store.Store) {
+				s.SetValue("existingkey", "5")
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("existingkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != 5 {
+					t.Errorf("Expected integer 5, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "INCRBY command - insufficient arguments",
+			command: &parser.Command{
+				Name: "INCRBY",
+				Args: []string{"key"},
+			},
+			verify: func(s *store.Store) {
+				// Should not cause any errors, just print error message
+			},
+		},
+		{
+			name: "INCRBY command - invalid increment value",
+			command: &parser.Command{
+				Name: "INCRBY",
+				Args: []string{"key", "invalid"},
+			},
+			verify: func(s *store.Store) {
+				// Should not cause any errors, just print error message
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testStore := store.NewStore()
+			
+			if tt.setup != nil {
+				tt.setup(testStore)
+			}
+
+			ExecuteCommand(tt.command, testStore)
+
+			if tt.verify != nil {
+				tt.verify(testStore)
+			}
+		})
+	}
+}
+
+func TestDecrByCommand(t *testing.T) {
+	tests := []struct {
+		name     string
+		command  *parser.Command
+		setup    func(*store.Store)
+		verify   func(*store.Store)
+	}{
+		{
+			name: "DECRBY command - new key with positive decrement",
+			command: &parser.Command{
+				Name: "DECRBY",
+				Args: []string{"newkey", "3"},
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("newkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != -3 {
+					t.Errorf("Expected integer -3, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "DECRBY command - existing key with positive decrement",
+			command: &parser.Command{
+				Name: "DECRBY",
+				Args: []string{"existingkey", "2"},
+			},
+			setup: func(s *store.Store) {
+				s.SetValue("existingkey", "10")
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("existingkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != 8 {
+					t.Errorf("Expected integer 8, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "DECRBY command - existing key with negative decrement (increment)",
+			command: &parser.Command{
+				Name: "DECRBY",
+				Args: []string{"existingkey", "-4"},
+			},
+			setup: func(s *store.Store) {
+				s.SetValue("existingkey", "5")
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("existingkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != 9 {
+					t.Errorf("Expected integer 9, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "DECRBY command - zero decrement",
+			command: &parser.Command{
+				Name: "DECRBY",
+				Args: []string{"existingkey", "0"},
+			},
+			setup: func(s *store.Store) {
+				s.SetValue("existingkey", "7")
+			},
+			verify: func(s *store.Store) {
+				value := s.GetValue("existingkey")
+				if value == nil {
+					t.Error("Expected value to be set, got nil")
+				}
+				if intVal, ok := value.(int); !ok || intVal != 7 {
+					t.Errorf("Expected integer 7, got %T: %v", value, value)
+				}
+			},
+		},
+		{
+			name: "DECRBY command - insufficient arguments",
+			command: &parser.Command{
+				Name: "DECRBY",
+				Args: []string{"key"},
+			},
+			verify: func(s *store.Store) {
+				// Should not cause any errors, just print error message
+			},
+		},
+		{
+			name: "DECRBY command - invalid decrement value",
+			command: &parser.Command{
+				Name: "DECRBY",
+				Args: []string{"key", "invalid"},
+			},
+			verify: func(s *store.Store) {
+				// Should not cause any errors, just print error message
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testStore := store.NewStore()
+			
+			if tt.setup != nil {
+				tt.setup(testStore)
+			}
+
+			ExecuteCommand(tt.command, testStore)
+
+			if tt.verify != nil {
+				tt.verify(testStore)
+			}
+		})
+	}
+}
