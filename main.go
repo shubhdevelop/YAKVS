@@ -7,14 +7,18 @@ import (
 	"os"
 
 	"github.com/shubhdevelop/YAKVS/aof"
+	"github.com/shubhdevelop/YAKVS/executor"
 	"github.com/shubhdevelop/YAKVS/parser"
+	"github.com/shubhdevelop/YAKVS/server"
 	"github.com/shubhdevelop/YAKVS/store"
 	"github.com/shubhdevelop/YAKVS/utils"
 )
 
 var aofManager *aof.AOFManager
-var kvStore *store.Store
+var KvStore *store.Store
 
+
+// Todo: build a client for the yakvs server
 func runPrompt() {
 	// Use regular reader for line-by-line input
 	reader := bufio.NewReader(os.Stdin)
@@ -62,7 +66,7 @@ func runPrompt() {
 					log.Fatalf("failed to write to AOF file: %v", err)
 				}
 			}
-			ExecuteCommand(command, kvStore)
+			executor.ExecuteCommand(command, KvStore)
 		}
 	}
 }
@@ -75,19 +79,22 @@ func init() {
 		log.Fatalf("Error initializing AOF manager: %v", err)
 	}
 	// Initialize store
-	kvStore = store.NewStore()
+	KvStore = store.NewStore()
 }
 
 func main() {
 	fmt.Println("YAKVS")
 	// Read and execute commands from AOF file
 	err := aofManager.ReadAndExecuteCommands(func(cmd *parser.Command) {
-		ExecuteCommand(cmd, kvStore)
+		executor.ExecuteCommand(cmd, KvStore)
 	})
+	
 	if err != nil {
 		log.Fatalf("Error reading AOF file: %v", err)
 	}
 
-	runPrompt()
+	server.StartServer("8080", KvStore, aofManager)
+
+	// runPrompt()
 	defer aofManager.Close()
 }
