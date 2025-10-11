@@ -68,12 +68,24 @@ func ToRESP(command string) (string, error) {
 			respBuilder.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(part), part))
 		}
 		return respBuilder.String(), nil
-	case "SET", "INCRBY", "DECRBY":
+	case "SET":
 		// SET key value [EX seconds] [PX milliseconds] [NX|XX]
 		if len(parts) < 3 {
 			return "", fmt.Errorf("SET command requires at least a key and a value")
 		}
 		// The number of arguments in the array will be 1 (SET) + key + value + options
+		respBuilder.WriteString(fmt.Sprintf("*%d\r\n", len(parts)))
+		for _, part := range parts {
+			respBuilder.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(part), part))
+		}
+		return respBuilder.String(), nil
+
+	case "INCRBY", "DECRBY":
+		// INCRBY key increment, DECRBY key decrement
+		if len(parts) < 3 {
+			return "", fmt.Errorf("%s command requires a key and a value", cmd)
+		}
+		// The number of arguments in the array will be 1 (command) + key + value
 		respBuilder.WriteString(fmt.Sprintf("*%d\r\n", len(parts)))
 		for _, part := range parts {
 			respBuilder.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(part), part))
