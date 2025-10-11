@@ -115,8 +115,8 @@ func (aof *AOFManager) ShouldPersistCommand(commandName string) bool {
 		"EXPIRE": true,
 		"EXPIREAT": true,
 		"PERSIST": true,
-		"INCREBY": true,
-		"DECREBY": true,
+		"INCRBY": true,
+		"DECRBY": true,
 		// Add more commands that modify data as needed
 	}
 	return persistentCommands[strings.ToUpper(commandName)]
