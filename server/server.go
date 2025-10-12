@@ -70,12 +70,14 @@ func handleConnection(conn net.Conn, kvStore *store.Store, aofManager *aof.AOFMa
 				log.Fatalf("failed to write to AOF file: %v", err)
 			}
 		}
-		executor.ExecuteCommand(command, kvStore)
-		fmt.Println("Executed command:", command)
-
-
+		resp, err := executor.ExecuteCommand(command, kvStore)
+		if err != nil {
+			fmt.Printf("Error executing command: %v\n", err)
+			continue
+		}
+		fmt.Println("command response:", resp)
 		// write the response to the client
-		conn.Write([]byte(line))
+		conn.Write([]byte(resp))
 	}
 	}
 }
