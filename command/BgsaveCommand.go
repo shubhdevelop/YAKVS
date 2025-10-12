@@ -22,10 +22,10 @@ func NewBgSaveCommand(cmd *parser.Command, store *store.Store) *BgSaveCommand {
 }
 
 // Execute executes the BGSAVE command
-func (dc *BgSaveCommand) Execute() {
+func (dc *BgSaveCommand) Execute() string {
 	if len(dc.Command.Args) < 1 {
 		fmt.Println("Error: BGSAVE doesn't require any arguments")	
-		return
+		return "$-1\r"
 	}
 
 	// value := dc.Store.Bgsave()
@@ -36,6 +36,7 @@ func (dc *BgSaveCommand) Execute() {
 	// 	fmt.Println("+OK\r")
 	// }
 	fmt.Println("+OK\r")
+	return "+OK\r\n"
 }
 
 // BgSaveCommandMeta provides metadata for the BGSAVE command

@@ -23,17 +23,17 @@ func NewExpireAtCommand(cmd *parser.Command, store *store.Store) *ExpireAtComman
 }
 
 // Execute executes the GET command
-func (gc *ExpireAtCommand) Execute() {
+func (gc *ExpireAtCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
 		fmt.Println("Error: EXPIREAT requires 1 argument (key)")
-		return
+		return "$-1\r"
 	}
 
 	key := gc.Command.Args[0]
 	ttl, err := strconv.ParseInt(gc.Command.Args[1], 10, 64)
 	if err != nil {
 		fmt.Println("Error parsing TTL:", err)
-		return
+		return "$-1\r"
 	}
 	value := gc.Store.SetTTL(key, ttl) 
 	
@@ -42,6 +42,7 @@ func (gc *ExpireAtCommand) Execute() {
 	} else {
 		fmt.Println(":0\r") // we expect the key to be set successfully
 	}
+	return fmt.Sprintf("+OK\r\n")
 }
 
 // GetCommandMeta provides metadata for the GET command

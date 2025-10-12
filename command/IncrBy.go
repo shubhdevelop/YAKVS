@@ -23,10 +23,10 @@ func NewIncreByCommand(cmd *parser.Command, store *store.Store) *IncreByCommand 
 }
 
 // Execute executes the INCRBY command
-func (sc *IncreByCommand) Execute() {
+func (sc *IncreByCommand) Execute() string {
 	if len(sc.Command.Args) < 2 {
 		fmt.Println("Error: INCRBY requires 2 arguments (key, value)")
-		return
+		return "$-1\r"
 	}	
 
 	key := sc.Command.Args[0]
@@ -36,15 +36,16 @@ func (sc *IncreByCommand) Execute() {
 	valueInt, err := strconv.Atoi(value)
 	if err != nil {
 		fmt.Println("Error: INCRBY requires a valid integer value")
-		return
+		return "$-1\r"
 	}
 	
 	newValue, err := sc.Store.IncreBy(key, valueInt)
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return
+		return "$-1\r"
 	}
 	fmt.Printf(":%d\r\n", newValue)
+	return fmt.Sprintf(":%d\r\n", newValue)
 }
 
 // IncreByCommandMeta provides metadata for the INCRBY command

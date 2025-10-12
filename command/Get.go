@@ -22,10 +22,10 @@ func NewGetCommand(cmd *parser.Command, store *store.Store) *GetCommand {
 }
 
 // Execute executes the GET command
-func (gc *GetCommand) Execute() {
+func (gc *GetCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
 		fmt.Println("Error: GET requires 1 argument (key)")
-		return
+		return "$-1\r"
 	}
 
 	key := gc.Command.Args[0]
@@ -33,10 +33,13 @@ func (gc *GetCommand) Execute() {
 	
 	if value == nil {
 		fmt.Println("$-1\r")
+		return "$-1\r"
 	} else {
 		valueStr := fmt.Sprintf("%v", value)
 		fmt.Printf("$%d\r\n%s\r\n", len(valueStr), valueStr)
+		return fmt.Sprintf(":%d\r\n", value)
 	}
+	return fmt.Sprintf("$-1\r\n")
 }
 
 // GetCommandMeta provides metadata for the GET command

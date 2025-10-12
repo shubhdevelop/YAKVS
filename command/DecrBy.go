@@ -23,10 +23,10 @@ func NewDecreByCommand(cmd *parser.Command, store *store.Store) *DecreByCommand 
 }
 
 // Execute executes the DECRBY command
-func (sc *DecreByCommand) Execute() {
+func (sc *DecreByCommand) Execute() string {
 	if len(sc.Command.Args) < 2 {
 		fmt.Println("Error: DECRBY requires 2 arguments (key, value)")
-		return
+		return "$-1\r"		
 	}	
 
 	key := sc.Command.Args[0]
@@ -36,16 +36,17 @@ func (sc *DecreByCommand) Execute() {
 	valueInt, err := strconv.Atoi(value)
 	if err != nil {
 		fmt.Println("Error: DECRBY requires a valid integer value")
-		return
+		return "$-1\r"
 	}
 	
 	newValue, err := sc.Store.DecreBy(key, valueInt)
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return
+		return "$-1\r"
 	}
 	
 	fmt.Printf(":%d\r\n", newValue)
+	return fmt.Sprintf(":%d\r\n", newValue)
 }
 
 // DecreByCommandMeta provides metadata for the DECRBY command

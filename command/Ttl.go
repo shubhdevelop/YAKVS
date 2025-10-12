@@ -22,10 +22,10 @@ func NewTtlCommand(cmd *parser.Command, store *store.Store) *TtlCommand {
 }
 
 // Execute executes the GET command
-func (gc *TtlCommand) Execute() {
+func (gc *TtlCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
 		fmt.Println("Error: TTL requires 1 argument (key)")
-		return
+		return "$-1\r"	
 	}
 
 	key := gc.Command.Args[0]
@@ -33,9 +33,12 @@ func (gc *TtlCommand) Execute() {
 	
 	if value == -2 {
 		fmt.Println(":-2\r")
+		return ":-2\r"
 	} else {
 		fmt.Printf(":%d\r\n", value)
+		return fmt.Sprintf(":%d\r\n", value)
 	}
+	return fmt.Sprintf("$-1\r\n")
 }
 
 // GetCommandMeta provides metadata for the GET command

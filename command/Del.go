@@ -22,10 +22,10 @@ func NewDelCommand(cmd *parser.Command, store *store.Store) *DelCommand {
 }
 
 // Execute executes the DEL command
-func (dc *DelCommand) Execute() {
+func (dc *DelCommand) Execute() string {
 	if len(dc.Command.Args) < 1 {
 		fmt.Println("Error: DEL requires 1 argument (key)")
-		return
+		return "$-1\r"
 	}
 
 	key := dc.Command.Args[0]
@@ -33,7 +33,7 @@ func (dc *DelCommand) Execute() {
 	// Check if key exists before attempting to delete
 	if !dc.Store.Exists(key) {
 		fmt.Println("$-1\r")
-		return
+		return "$-1\r"
 	}
 	
 	// Actually delete the key
@@ -43,6 +43,7 @@ func (dc *DelCommand) Execute() {
 	} else {
 		fmt.Println("$-1\r")
 	}
+	return fmt.Sprintf("+OK\r\n")
 }
 
 // DelCommandMeta provides metadata for the DEL command

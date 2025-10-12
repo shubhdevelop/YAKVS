@@ -22,10 +22,10 @@ func NewSetCommand(cmd *parser.Command, store *store.Store) *SetCommand {
 }
 
 // Execute executes the SET command
-func (sc *SetCommand) Execute() {
+func (sc *SetCommand) Execute() string {
 	if len(sc.Command.Args) < 2 {
 		fmt.Println("Error: SET requires 2 arguments (key, value)")
-		return
+		return "$-1\r"
 	}	
 
 	key := sc.Command.Args[0]
@@ -33,6 +33,7 @@ func (sc *SetCommand) Execute() {
 	
 	sc.Store.SetValue(key, value)
 	fmt.Println("+OK\r")
+	return fmt.Sprintf("+OK\r\n")
 }
 
 // SetCommandMeta provides metadata for the SET command

@@ -22,20 +22,23 @@ func NewPersistCommand(cmd *parser.Command, store *store.Store) *PersistCommand 
 }
 
 // Execute executes the PERSIST command
-func (gc *PersistCommand) Execute() {
+func (gc *PersistCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
 		fmt.Println("Error: PERSIST requires 1 argument (key)")
-		return
+		return "$-1\r"
 	}
 
 	key := gc.Command.Args[0]
 	value := gc.Store.RemoveExpiry(key)
 	
 	if value {
-		fmt.Println("+OK\r")
+		fmt.Println(":1\r")
+		return fmt.Sprintf(":%d\r\n", value)
 	} else {
-		fmt.Println(":0\r") // we expect the key to be set successfully
+		fmt.Println(":0\r")
+		return fmt.Sprintf(":%d\r\n", value)
 	}
+	return fmt.Sprintf("$-1\r\n")
 }
 
 // PersistCommandMeta provides metadata for the PERSIST command

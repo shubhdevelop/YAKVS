@@ -22,10 +22,10 @@ func NewExistsCommand(cmd *parser.Command, store *store.Store) *ExistsCommand {
 }
 
 // Execute executes the GET command
-func (gc *ExistsCommand) Execute() {
+func (gc *ExistsCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
 		fmt.Println("Error: EXISTS requires 1 argument (key)")
-		return
+		return "$-1\r"
 	}
 
 	key := gc.Command.Args[0]
@@ -36,6 +36,7 @@ func (gc *ExistsCommand) Execute() {
 	} else {
 		fmt.Println(":0\r")
 	}
+	return fmt.Sprintf(":%d\r\n", value)
 }
 
 // GetCommandMeta provides metadata for the GET command

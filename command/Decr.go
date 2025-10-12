@@ -22,10 +22,10 @@ func NewDecrCommand(cmd *parser.Command, store *store.Store) *DecrCommand {
 }
 
 // Execute executes the DECR command
-func (sc *DecrCommand) Execute() {
+func (sc *DecrCommand) Execute() string {
 	if len(sc.Command.Args) < 1 {
-		fmt.Println("Error: DECR requires 1 argument (key)")
-		return
+		fmt.Println("Error: DECR requires 1 argument (key)") 
+		return "$-1\r"
 	}	
 
 	key := sc.Command.Args[0]
@@ -34,9 +34,10 @@ func (sc *DecrCommand) Execute() {
 	newValue, err := sc.Store.DecreBy(key, 1)
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return
+		return "$-1\r"
 	}
 	fmt.Printf(":%d\r\n", newValue)
+	return fmt.Sprintf(":%d\r\n", newValue)
 }
 
 // DecrCommandMeta provides metadata for the DECR command
