@@ -9,48 +9,50 @@ import (
 	"github.com/shubhdevelop/YAKVS/store"
 )
 
-func ExecuteCommand(cmd *parser.Command, store *store.Store) {
+func ExecuteCommand(cmd *parser.Command, store *store.Store) (string, error) {
 	fmt.Println("Executing command:", cmd)
 	switch strings.ToUpper(cmd.Name) {
 	case "BGSAVE":
 		bgSaveCmd := command.NewBgSaveCommand(cmd, store)
-		bgSaveCmd.Execute()
+		return bgSaveCmd.Execute(), nil
 	case "SET":
 		setCmd := command.NewSetCommand(cmd, store)
-		setCmd.Execute()
+		return setCmd.Execute(), nil
 	case "GET":
 		getCmd := command.NewGetCommand(cmd, store)
-		getCmd.Execute()
+		return getCmd.Execute(), nil
 	case "DEL":
 		delCmd := command.NewDelCommand(cmd, store)
-		delCmd.Execute()
+		return delCmd.Execute(), nil
 	case "EXISTS":
 		existsCmd := command.NewExistsCommand(cmd, store)
-		existsCmd.Execute()	
+		return existsCmd.Execute(), nil
 	case "TTL":
 		ttlCmd := command.NewTtlCommand(cmd, store)
-		ttlCmd.Execute()
+		return ttlCmd.Execute(), nil
 	case "EXPIRE":
 		expireCmd := command.NewExpireCommand(cmd, store)
-		expireCmd.Execute()	
+		return expireCmd.Execute(), nil
 	case "EXPIREAT":
 		expireAtCmd := command.NewExpireAtCommand(cmd, store)
-		expireAtCmd.Execute()
+		return expireAtCmd.Execute(), nil
 	case "PERSIST":
 		persistCmd := command.NewPersistCommand(cmd, store)
-		persistCmd.Execute()
+		return persistCmd.Execute(), nil
 	case "INCRBY":
 		incrByCmd := command.NewIncreByCommand(cmd, store)
-		incrByCmd.Execute()
+		return incrByCmd.Execute(), nil
 	case "DECRBY":
 		decrByCmd := command.NewDecreByCommand(cmd, store)
-		decrByCmd.Execute()
+		return decrByCmd.Execute(), nil	
 	case "INCR":
 		incrByCmd := command.NewIncrCommand(cmd, store)
-		incrByCmd.Execute()
+		return incrByCmd.Execute(), nil
 	case "DECR":
 		decrByCmd := command.NewDecrCommand(cmd, store)
-		decrByCmd.Execute()
+		return decrByCmd.Execute(), nil
+	default:
+		return "", fmt.Errorf("invalid command: %s", cmd.Name)
 	}
 }
 
