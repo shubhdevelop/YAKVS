@@ -32,14 +32,17 @@ func (gc *GetCommand) Execute() string {
 	value := gc.Store.GetValue(key)
 	
 	if value == nil {
-		fmt.Println("$-1\r")
-		return "$-1\r"
+		return "$-1\r\n"
 	} else {
-		valueStr := fmt.Sprintf("%v", value)
-		fmt.Printf("$%d\r\n%s\r\n", len(valueStr), valueStr)
-		return fmt.Sprintf(":%v\r\n", value)
+		// Check if the value is an integer
+		if intVal, ok := value.(int); ok {
+			return fmt.Sprintf(":%d\r\n", intVal)
+		} else {
+			// For string values, use bulk string format
+			valueStr := fmt.Sprintf("%v", value)
+			return fmt.Sprintf("$%d\r\n%s\r\n", len(valueStr), valueStr)
+		}
 	}
-	// return fmt.Sprintf("$-1\r\n")
 }
 
 // GetCommandMeta provides metadata for the GET command

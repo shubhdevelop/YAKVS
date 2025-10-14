@@ -25,7 +25,7 @@ func NewDecrCommand(cmd *parser.Command, store *store.Store) *DecrCommand {
 func (sc *DecrCommand) Execute() string {
 	if len(sc.Command.Args) < 1 {
 		fmt.Println("Error: DECR requires 1 argument (key)") 
-		return "$-1\r"
+		return ":-1\r\n"
 	}	
 
 	key := sc.Command.Args[0]
@@ -34,7 +34,7 @@ func (sc *DecrCommand) Execute() string {
 	newValue, err := sc.Store.DecreBy(key, 1)
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return "$-1\r"
+		return ":-1\r\n"
 	}
 	fmt.Printf(":%d\r\n", newValue)
 	return fmt.Sprintf(":%d\r\n", newValue)

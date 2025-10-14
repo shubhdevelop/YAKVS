@@ -25,7 +25,7 @@ func NewIncrCommand(cmd *parser.Command, store *store.Store) *IncrCommand {
 func (sc *IncrCommand) Execute() string {
 	if len(sc.Command.Args) < 1 {
 		fmt.Println("Error: INCR requires 1 argument (key)")
-		return "$-1\r"
+		return ":-1\r\n"
 	}	
 
 	key := sc.Command.Args[0]
@@ -34,7 +34,7 @@ func (sc *IncrCommand) Execute() string {
 	newValue, err := sc.Store.IncreBy(key, 1)
 	if err != nil {
 		fmt.Println("Error: ", err)
-		return "$-1\r"
+		return ":-1\r\n"
 	}
 	fmt.Printf(":%d\r\n", newValue)
 	return fmt.Sprintf(":%d\r\n", newValue)
