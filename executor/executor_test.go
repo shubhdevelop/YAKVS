@@ -334,8 +334,12 @@ func TestExecuteCommand(t *testing.T) {
 				tt.setup(testStore)
 			}
 
-			// Execute the command
-			ExecuteCommand(tt.command, testStore)
+			// Execute the command with a channel to wait for completion
+			resultChan := make(chan ResultWithError, 1)
+			ExecuteCommand(tt.command, testStore, resultChan)
+			
+			// Wait for the command to complete
+			<-resultChan
 
 			// Run verification if provided
 			if tt.verify != nil {
@@ -352,50 +356,64 @@ func TestExecuteCommandIntegration(t *testing.T) {
 	// Test sequence: SET -> GET -> EXISTS -> EXPIRE -> TTL -> DEL -> EXISTS
 	t.Run("Complete workflow", func(t *testing.T) {
 		// SET
+		resultChan := make(chan ResultWithError, 1)
 		ExecuteCommand(&parser.Command{
 			Name: "SET",
 			Args: []string{"integration_test", "integration_value"},
-		}, testStore)
+		}, testStore, resultChan)
+		<-resultChan
 		
 		if !testStore.Exists("integration_test") {
 			t.Error("Key should exist after SET")
 		}
 
 		// GET
+		resultChan = make(chan ResultWithError, 1)
 		ExecuteCommand(&parser.Command{
 			Name: "GET",
 			Args: []string{"integration_test"},
-		}, testStore)
+		}, testStore, resultChan)
+		<-resultChan
 
 		// EXISTS
+		resultChan = make(chan ResultWithError, 1)
 		ExecuteCommand(&parser.Command{
 			Name: "EXISTS",
 			Args: []string{"integration_test"},
-		}, testStore)
+		}, testStore, resultChan)
+		<-resultChan
 
 		// EXPIRE
+		resultChan = make(chan ResultWithError, 1)
 		ExecuteCommand(&parser.Command{
 			Name: "EXPIRE",
 			Args: []string{"integration_test", "7200"}, // 2 hours
-		}, testStore)
+		}, testStore, resultChan)
+		<-resultChan
 
 		// TTL
+		resultChan = make(chan ResultWithError, 1)
 		ExecuteCommand(&parser.Command{
 			Name: "TTL",
 			Args: []string{"integration_test"},
-		}, testStore)
+		}, testStore, resultChan)
+		<-resultChan
 
 		// DEL
+		resultChan = make(chan ResultWithError, 1)
 		ExecuteCommand(&parser.Command{
 			Name: "DEL",
 			Args: []string{"integration_test"},
-		}, testStore)
+		}, testStore, resultChan)
+		<-resultChan
 
 		// EXISTS (should return false now)
+		resultChan = make(chan ResultWithError, 1)
 		ExecuteCommand(&parser.Command{
 			Name: "EXISTS",
 			Args: []string{"integration_test"},
-		}, testStore)
+		}, testStore, resultChan)
+		<-resultChan
 
 		if testStore.Exists("integration_test") {
 			t.Error("Key should not exist after DEL")
@@ -408,31 +426,39 @@ func TestExecuteCommandEdgeCases(t *testing.T) {
 
 	t.Run("Empty command", func(t *testing.T) {
 		// This should not panic
+		resultChan := make(chan ResultWithError, 1)
 		ExecuteCommand(&parser.Command{
 			Name: "",
 			Args: []string{},
-		}, testStore)
+		}, testStore, resultChan)
+		<-resultChan
 	})
 
 	t.Run("Unknown command", func(t *testing.T) {
 		// This should not panic
+		resultChan := make(chan ResultWithError, 1)
 		ExecuteCommand(&parser.Command{
 			Name: "UNKNOWN",
 			Args: []string{"arg1", "arg2"},
-		}, testStore)
+		}, testStore, resultChan)
+		<-resultChan
 	})
 
 	t.Run("Commands with insufficient arguments", func(t *testing.T) {
 		// These should not panic, but may not work as expected
+		resultChan := make(chan ResultWithError, 1)
 		ExecuteCommand(&parser.Command{
 			Name: "GET",
 			Args: []string{}, // No key provided
-		}, testStore)
+		}, testStore, resultChan)
+		<-resultChan
 
+		resultChan = make(chan ResultWithError, 1)
 		ExecuteCommand(&parser.Command{
 			Name: "SET",
 			Args: []string{"key"}, // No value provided
-		}, testStore)
+		}, testStore, resultChan)
+		<-resultChan
 	})
 }
 
@@ -604,7 +630,9 @@ func TestIncrCommand(t *testing.T) {
 				tt.setup(testStore)
 			}
 
-			ExecuteCommand(tt.command, testStore)
+			resultChan := make(chan ResultWithError, 1)
+			ExecuteCommand(tt.command, testStore, resultChan)
+			<-resultChan
 
 			if tt.verify != nil {
 				tt.verify(testStore)
@@ -675,7 +703,9 @@ func TestDecrCommand(t *testing.T) {
 				tt.setup(testStore)
 			}
 
-			ExecuteCommand(tt.command, testStore)
+			resultChan := make(chan ResultWithError, 1)
+			ExecuteCommand(tt.command, testStore, resultChan)
+			<-resultChan
 
 			if tt.verify != nil {
 				tt.verify(testStore)
@@ -794,7 +824,9 @@ func TestIncrByCommand(t *testing.T) {
 				tt.setup(testStore)
 			}
 
-			ExecuteCommand(tt.command, testStore)
+			resultChan := make(chan ResultWithError, 1)
+			ExecuteCommand(tt.command, testStore, resultChan)
+			<-resultChan
 
 			if tt.verify != nil {
 				tt.verify(testStore)
@@ -913,7 +945,9 @@ func TestDecrByCommand(t *testing.T) {
 				tt.setup(testStore)
 			}
 
-			ExecuteCommand(tt.command, testStore)
+			resultChan := make(chan ResultWithError, 1)
+			ExecuteCommand(tt.command, testStore, resultChan)
+			<-resultChan
 
 			if tt.verify != nil {
 				tt.verify(testStore)
