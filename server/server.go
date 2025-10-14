@@ -20,7 +20,7 @@ func StartServer(port string, kvStore *store.Store, aofManager *aof.AOFManager) 
 	}
 	defer listener.Close()
 
-	fmt.Printf("Server started on port %s\n", port)	
+	fmt.Printf("Server started on port %s\n", port)
 
 	for {
 		conn, err := listener.Accept()
@@ -56,29 +56,35 @@ func handleConnection(conn net.Conn, kvStore *store.Store, aofManager *aof.AOFMa
 
 		if utils.IsRESPFormat(resp) {
 			// Preprocess input to convert literal \r\n to actual control characters
-		// processedInput := utils.PreprocessInput(resp)
-		parser := parser.NewStreamingParser([]byte(resp))
-		fmt.Println("Parsing RESP command:", resp)
-		command, err := parser.ParseCommand()
-		if err != nil {
-			fmt.Printf("Error parsing RESP command: %v\n", err)
-		}
-		// check if command should be persisted
-		if aofManager.ShouldPersistCommand(command.Name) {
-			err := aofManager.WriteCommand(resp)
+			// processedInput := utils.PreprocessInput(resp)
+			parser := parser.NewStreamingParser([]byte(resp))
+			fmt.Println("Parsing RESP command:", resp)
+			command, err := parser.ParseCommand()
 			if err != nil {
-				log.Fatalf("failed to write to AOF file: %v", err)
+				fmt.Printf("Error parsing RESP command: %v\n", err)
 			}
+			// check if command should be persisted
+			if aofManager.ShouldPersistCommand(command.Name) {
+				err := aofManager.WriteCommand(resp)
+				if err != nil {
+					log.Fatalf("failed to write to AOF file: %v", err)
+				}
+			}
+
+			resultChan := make(chan executor.ResultWithError, 1) // Buffered channel for single result
+
+			// Execute command concurrently
+			executor.ExecuteCommand(command, kvStore, resultChan)
+			
+			// Wait for the result from the concurrent execution
+			result := <-resultChan
+			if result.Err != nil {
+				fmt.Printf("Error executing command: %v\n", result.Err)
+				continue
+			}
+			fmt.Println("command response:", result.Result)
+			// write the response to the client
+			conn.Write([]byte(result.Result))
 		}
-		resp, err := executor.ExecuteCommand(command, kvStore)
-		if err != nil {
-			fmt.Printf("Error executing command: %v\n", err)
-			continue
-		}
-		fmt.Println("command response:", resp)
-		// write the response to the client
-		conn.Write([]byte(resp))
-	}
 	}
 }
-

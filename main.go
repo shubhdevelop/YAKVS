@@ -30,7 +30,7 @@ func main() {
 	fmt.Println("YAKVS")
 	// Read and execute commands from AOF file
 	err := aofManager.ReadAndExecuteCommands(func(cmd *parser.Command) {
-		executor.ExecuteCommand(cmd, KvStore)
+		executor.ExecuteCommand(cmd, KvStore, nil)
 	})
 	
 	if err != nil {
