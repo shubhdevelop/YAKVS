@@ -43,7 +43,7 @@ func (dc *DelCommand) Execute() string {
 	} else {
 		fmt.Println("$-1\r")
 	}
-	return fmt.Sprintf("+OK\r\n")
+	return "+OK\r\n"
 }
 
 // DelCommandMeta provides metadata for the DEL command

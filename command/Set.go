@@ -33,7 +33,7 @@ func (sc *SetCommand) Execute() string {
 	
 	sc.Store.SetValue(key, value)
 	fmt.Println("+OK\r")
-	return fmt.Sprintf("+OK\r\n")
+	return "+OK\r\n"
 }
 
 // SetCommandMeta provides metadata for the SET command
@@ -45,7 +45,7 @@ type SetCommandMeta struct {
 	Examples  string
 }
 
-// SetMeta returns the command metadata
+// SetCommandMeta returns the command metadata
 func SetMeta() *SetCommandMeta {
 	return &SetCommandMeta{
 		Name:      "SET",

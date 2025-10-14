@@ -37,9 +37,9 @@ func (gc *GetCommand) Execute() string {
 	} else {
 		valueStr := fmt.Sprintf("%v", value)
 		fmt.Printf("$%d\r\n%s\r\n", len(valueStr), valueStr)
-		return fmt.Sprintf(":%d\r\n", value)
+		return fmt.Sprintf(":%v\r\n", value)
 	}
-	return fmt.Sprintf("$-1\r\n")
+	// return fmt.Sprintf("$-1\r\n")
 }
 
 // GetCommandMeta provides metadata for the GET command
@@ -51,7 +51,7 @@ type GetCommandMeta struct {
 	Examples  string
 }
 
-// GetMeta returns the command metadata
+// GetCommandMeta returns the command metadata
 func GetMeta() *GetCommandMeta {
 	return &GetCommandMeta{
 		Name:      "GET",

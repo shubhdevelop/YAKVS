@@ -7,13 +7,13 @@ import (
 	"github.com/shubhdevelop/YAKVS/store"
 )
 
-// GetCommand handles the GET command
+// TtlCommand handles the TTL command
 type TtlCommand struct {
 	Command *parser.Command
 	Store   *store.Store
 }
 
-// NewGetCommand creates a new GET command instance
+// NewTtlCommand creates a new TTL command instance
 func NewTtlCommand(cmd *parser.Command, store *store.Store) *TtlCommand {
 	return &TtlCommand{
 		Command: cmd,
@@ -21,7 +21,7 @@ func NewTtlCommand(cmd *parser.Command, store *store.Store) *TtlCommand {
 	}
 }
 
-// Execute executes the GET command
+// Execute executes the TTL command
 func (gc *TtlCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
 		fmt.Println("Error: TTL requires 1 argument (key)")
@@ -35,13 +35,12 @@ func (gc *TtlCommand) Execute() string {
 		fmt.Println(":-2\r")
 		return ":-2\r"
 	} else {
-		fmt.Printf(":%d\r\n", value)
-		return fmt.Sprintf(":%d\r\n", value)
+		fmt.Printf(":%v\r\n", value)
+		return fmt.Sprintf(":%v\r\n", value)
 	}
-	return fmt.Sprintf("$-1\r\n")
 }
 
-// GetCommandMeta provides metadata for the GET command
+// TtlCommandMeta provides metadata for the TTL command
 type TtlCommandMeta struct {
 	Name      string
 	Syntax    string
@@ -50,7 +49,7 @@ type TtlCommandMeta struct {
 	Examples  string
 }
 
-// GetMeta returns the command metadata
+// TtlCommandMeta returns the command metadata
 func TtlMeta() *TtlCommandMeta {
 	return &TtlCommandMeta{
 		Name:      "TTL",

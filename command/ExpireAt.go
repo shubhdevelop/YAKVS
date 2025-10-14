@@ -8,13 +8,13 @@ import (
 	"github.com/shubhdevelop/YAKVS/store"
 )
 
-// GetCommand handles the GET command
+// ExpireAtCommand handles the EXPIREAT command
 type ExpireAtCommand struct {
 	Command *parser.Command
 	Store   *store.Store
 }
 
-// NewGetCommand creates a new GET command instance
+// NewExpireAtCommand creates a new EXPIREAT command instance
 func NewExpireAtCommand(cmd *parser.Command, store *store.Store) *ExpireAtCommand {
 	return &ExpireAtCommand{
 		Command: cmd,
@@ -22,7 +22,7 @@ func NewExpireAtCommand(cmd *parser.Command, store *store.Store) *ExpireAtComman
 	}
 }
 
-// Execute executes the GET command
+// Execute executes the EXPIREAT command
 func (gc *ExpireAtCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
 		fmt.Println("Error: EXPIREAT requires 1 argument (key)")
@@ -42,10 +42,10 @@ func (gc *ExpireAtCommand) Execute() string {
 	} else {
 		fmt.Println(":0\r") // we expect the key to be set successfully
 	}
-	return fmt.Sprintf("+OK\r\n")
+	return "+OK\r\n"
 }
 
-// GetCommandMeta provides metadata for the GET command
+// ExpireAtCommandMeta provides metadata for the EXPIREAT command
 type ExpireAtCommandMeta struct {
 	Name      string
 	Syntax    string
@@ -54,7 +54,7 @@ type ExpireAtCommandMeta struct {
 	Examples  string
 }
 
-// GetMeta returns the command metadata
+// ExpireAtMeta returns the command metadata
 func ExpireAtMeta() *ExpireAtCommandMeta {
 	return &ExpireAtCommandMeta{
 		Name:      "EXPIREAT",

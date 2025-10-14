@@ -36,7 +36,7 @@ func (gc *ExistsCommand) Execute() string {
 	} else {
 		fmt.Println(":0\r")
 	}
-	return fmt.Sprintf(":%d\r\n", value)
+	return fmt.Sprintf(":%v\r\n", value)
 }
 
 // GetCommandMeta provides metadata for the GET command

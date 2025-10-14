@@ -33,12 +33,11 @@ func (gc *PersistCommand) Execute() string {
 	
 	if value {
 		fmt.Println(":1\r")
-		return fmt.Sprintf(":%d\r\n", value)
+		return fmt.Sprintf(":%v\r\n", value)
 	} else {
 		fmt.Println(":0\r")
-		return fmt.Sprintf(":%d\r\n", value)
+		return fmt.Sprintf(":%v\r\n", value)
 	}
-	return fmt.Sprintf("$-1\r\n")
 }
 
 // PersistCommandMeta provides metadata for the PERSIST command
@@ -50,7 +49,7 @@ type PersistCommandMeta struct {
 	Examples  string
 }
 
-// PersistMeta returns the command metadata
+// PersistCommandMeta returns the command metadata
 func PersistMeta() *PersistCommandMeta {
 	return &PersistCommandMeta{
 		Name:      "PERSIST",

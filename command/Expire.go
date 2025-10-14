@@ -44,7 +44,7 @@ func (gc *ExpireCommand) Execute() string {
 	} else {
 		fmt.Println(":0\r") // we expect the key to be set successfully
 	}
-	return fmt.Sprintf("+OK\r\n")
+	return "+OK\r\n"
 }
 
 // GetCommandMeta provides metadata for the GET command
