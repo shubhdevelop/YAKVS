@@ -3,16 +3,18 @@ package store
 import (
 	"errors"
 	"strconv"
+	"sync"
 	"time"
 )
 
 type KvObjectDict map[string]kvObj
 
-type ExpiryDict map[string]int64  // Separate expires dictionary: key -> unix_timestamp
+type ExpiryDict map[string]int64 // Separate expires dictionary: key -> unix_timestamp
 
 type Store struct {
 	Dict   *KvObjectDict
 	Expiry *ExpiryDict
+	Mu     sync.Mutex
 }
 
 type StoreInterface interface {
@@ -23,7 +25,7 @@ type StoreInterface interface {
 	GetTTL(key string) int
 	SetTTL(key string, ttl int) bool
 	RemoveExpiry(key string) bool
-	IncreBy(key string, value int)( int, error)
+	IncreBy(key string, value int) (int, error)
 	DecreBy(key string, value int) (int, error)
 }
 
@@ -31,7 +33,7 @@ func NewStore() *Store {
 	dict := make(KvObjectDict, 0)
 	expiry := make(ExpiryDict, 0)
 	return &Store{
-		Dict:   &dict, 
+		Dict:   &dict,
 		Expiry: &expiry,
 	}
 }
@@ -80,9 +82,8 @@ func (s *Store) SetValue(key string, value interface{}) {
 	} else if intVal, ok := value.(int); ok {
 		kvObj := createIntObj(intVal)
 		(*s.Dict)[key] = *kvObj
-	}	
+	}
 }
-
 
 func (s *Store) DeleteValue(key string) bool {
 	if obj, exists := (*s.Dict)[key]; exists {
@@ -103,13 +104,13 @@ func (s *Store) GetTTL(key string) int {
 	if _, exists := (*s.Dict)[key]; !exists {
 		return -2 // Key doesn't exist at all
 	}
-	
+
 	// Check if key has expiry set
 	ttl, hasExpiry := (*s.Expiry)[key]
 	if !hasExpiry {
 		return -1 // Key exists but has no expiry
 	}
-	
+
 	// calculate the time difference between the current time and the expiry time
 	timeDiff := time.Until(time.Unix(ttl, 0))
 
@@ -128,7 +129,7 @@ func (s *Store) SetTTL(key string, ttl int64) bool {
 	if _, exists := (*s.Dict)[key]; !exists {
 		return false // Key doesn't exist
 	}
-	
+
 	// Set the expiry
 	(*s.Expiry)[key] = ttl
 	return true
@@ -140,7 +141,7 @@ func (s *Store) RemoveExpiry(key string) bool {
 	if _, exists := (*s.Dict)[key]; !exists {
 		return false // Key doesn't exist
 	}
-	
+
 	// Remove from expiry dictionary
 	delete(*s.Expiry, key)
 	return true
@@ -154,7 +155,7 @@ func (s *Store) IncreBy(key string, value int) (int, error) {
 		}
 
 		*(*int)(obj.ptr) += value
-		return  *(*int)(obj.ptr), nil 
+		return *(*int)(obj.ptr), nil
 	}
 	// Key doesn't exist, create it with value 0 and then increment
 	kvObj := createIntObj(0)
@@ -165,12 +166,12 @@ func (s *Store) IncreBy(key string, value int) (int, error) {
 
 func (s *Store) DecreBy(key string, value int) (int, error) {
 	if obj, exists := (*s.Dict)[key]; exists {
-		 // check for the encoding must be int
+		// check for the encoding must be int
 		if obj.getEncoding() != OBJ_ENCODING_INT {
-			return 0 , errors.New("can't decrement other value than value of type Int")
+			return 0, errors.New("can't decrement other value than value of type Int")
 		}
 		*(*int)(obj.ptr) -= value
-			return 	*(*int)(obj.ptr) , nil
+		return *(*int)(obj.ptr), nil
 	}
 	// Key doesn't exist, create it with value 0 and then decrement
 	kvObj := createIntObj(0)
@@ -178,3 +179,4 @@ func (s *Store) DecreBy(key string, value int) (int, error) {
 	*(*int)(kvObj.ptr) -= value
 	return *(*int)(kvObj.ptr), nil
 }
+
