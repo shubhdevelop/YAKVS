@@ -14,7 +14,7 @@ type ResultWithError struct {
 	Err    error
 }
 
-func ExecuteCommand(cmd *parser.Command, store *store.Store, ch chan ResultWithError) {
+func ExecuteCommandAysnc(cmd *parser.Command, store *store.Store, ch chan ResultWithError) {
 	fmt.Println("Executing command:", cmd)
 	
 	// Execute command concurrently in a goroutine
@@ -68,8 +68,7 @@ func ExecuteCommand(cmd *parser.Command, store *store.Store, ch chan ResultWithE
 	}()
 }
 
-func ExecuteCommandIntegration(cmd *parser.Command, store *store.Store) {
-	fmt.Println("Executing command:", cmd)
+func ExecuteCommandSync(cmd *parser.Command, store *store.Store) {
 	switch strings.ToUpper(cmd.Name) {
 
 	case "SET":

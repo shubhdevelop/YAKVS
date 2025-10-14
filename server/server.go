@@ -45,12 +45,14 @@ func handleConnection(conn net.Conn, kvStore *store.Store, aofManager *aof.AOFMa
 			return
 		}
 		if line == "\n" || line == "" {
+			conn.Write([]byte("$-1\r\n"))
 			continue
 		}
 		fmt.Println("Received message:", line)
 		resp, err := utils.ToRESP(line)
 		if err != nil {
 			fmt.Printf("Error converting to RESP: %v\n", err)
+			conn.Write([]byte("$-1\r\n"))
 			continue
 		}
 
@@ -62,24 +64,30 @@ func handleConnection(conn net.Conn, kvStore *store.Store, aofManager *aof.AOFMa
 			command, err := parser.ParseCommand()
 			if err != nil {
 				fmt.Printf("Error parsing RESP command: %v\n", err)
+				conn.Write([]byte("$-1\r\n"))
+				continue
 			}
 			// check if command should be persisted
 			if aofManager.ShouldPersistCommand(command.Name) {
 				err := aofManager.WriteCommand(resp)
 				if err != nil {
 					log.Fatalf("failed to write to AOF file: %v", err)
+					conn.Write([]byte("$-1\r\n"))
+					continue
 				}
+				fmt.Println("Writing command to AOF file:", resp)
 			}
 
 			resultChan := make(chan executor.ResultWithError, 1) // Buffered channel for single result
 
 			// Execute command concurrently
-			executor.ExecuteCommand(command, kvStore, resultChan)
+			executor.ExecuteCommandAysnc(command, kvStore, resultChan)
 			
 			// Wait for the result from the concurrent execution
 			result := <-resultChan
 			if result.Err != nil {
 				fmt.Printf("Error executing command: %v\n", result.Err)
+				conn.Write([]byte("$-1\r\n"))
 				continue
 			}
 			fmt.Println("command response:", result.Result)
