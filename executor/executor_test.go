@@ -9,7 +9,7 @@ import (
 	"github.com/shubhdevelop/YAKVS/store"
 )
 
-func TestExecuteCommand(t *testing.T) {
+func TestExecuteCommandAysnc(t *testing.T) {
 	tests := []struct {
 		name     string
 		command  *parser.Command
@@ -336,7 +336,7 @@ func TestExecuteCommand(t *testing.T) {
 
 			// Execute the command with a channel to wait for completion
 			resultChan := make(chan ResultWithError, 1)
-			ExecuteCommand(tt.command, testStore, resultChan)
+			ExecuteCommandAysnc(tt.command, testStore, resultChan)
 			
 			// Wait for the command to complete
 			<-resultChan
@@ -357,7 +357,7 @@ func TestExecuteCommandIntegration(t *testing.T) {
 	t.Run("Complete workflow", func(t *testing.T) {
 		// SET
 		resultChan := make(chan ResultWithError, 1)
-		ExecuteCommand(&parser.Command{
+		ExecuteCommandAysnc(&parser.Command{
 			Name: "SET",
 			Args: []string{"integration_test", "integration_value"},
 		}, testStore, resultChan)
@@ -369,7 +369,7 @@ func TestExecuteCommandIntegration(t *testing.T) {
 
 		// GET
 		resultChan = make(chan ResultWithError, 1)
-		ExecuteCommand(&parser.Command{
+		ExecuteCommandAysnc(&parser.Command{
 			Name: "GET",
 			Args: []string{"integration_test"},
 		}, testStore, resultChan)
@@ -377,7 +377,7 @@ func TestExecuteCommandIntegration(t *testing.T) {
 
 		// EXISTS
 		resultChan = make(chan ResultWithError, 1)
-		ExecuteCommand(&parser.Command{
+		ExecuteCommandAysnc(&parser.Command{
 			Name: "EXISTS",
 			Args: []string{"integration_test"},
 		}, testStore, resultChan)
@@ -385,7 +385,7 @@ func TestExecuteCommandIntegration(t *testing.T) {
 
 		// EXPIRE
 		resultChan = make(chan ResultWithError, 1)
-		ExecuteCommand(&parser.Command{
+		ExecuteCommandAysnc(&parser.Command{
 			Name: "EXPIRE",
 			Args: []string{"integration_test", "7200"}, // 2 hours
 		}, testStore, resultChan)
@@ -393,7 +393,7 @@ func TestExecuteCommandIntegration(t *testing.T) {
 
 		// TTL
 		resultChan = make(chan ResultWithError, 1)
-		ExecuteCommand(&parser.Command{
+		ExecuteCommandAysnc(&parser.Command{
 			Name: "TTL",
 			Args: []string{"integration_test"},
 		}, testStore, resultChan)
@@ -401,7 +401,7 @@ func TestExecuteCommandIntegration(t *testing.T) {
 
 		// DEL
 		resultChan = make(chan ResultWithError, 1)
-		ExecuteCommand(&parser.Command{
+		ExecuteCommandAysnc(&parser.Command{
 			Name: "DEL",
 			Args: []string{"integration_test"},
 		}, testStore, resultChan)
@@ -409,7 +409,7 @@ func TestExecuteCommandIntegration(t *testing.T) {
 
 		// EXISTS (should return false now)
 		resultChan = make(chan ResultWithError, 1)
-		ExecuteCommand(&parser.Command{
+		ExecuteCommandAysnc(&parser.Command{
 			Name: "EXISTS",
 			Args: []string{"integration_test"},
 		}, testStore, resultChan)
@@ -427,7 +427,7 @@ func TestExecuteCommandEdgeCases(t *testing.T) {
 	t.Run("Empty command", func(t *testing.T) {
 		// This should not panic
 		resultChan := make(chan ResultWithError, 1)
-		ExecuteCommand(&parser.Command{
+		ExecuteCommandAysnc(&parser.Command{
 			Name: "",
 			Args: []string{},
 		}, testStore, resultChan)
@@ -437,7 +437,7 @@ func TestExecuteCommandEdgeCases(t *testing.T) {
 	t.Run("Unknown command", func(t *testing.T) {
 		// This should not panic
 		resultChan := make(chan ResultWithError, 1)
-		ExecuteCommand(&parser.Command{
+		ExecuteCommandAysnc(&parser.Command{
 			Name: "UNKNOWN",
 			Args: []string{"arg1", "arg2"},
 		}, testStore, resultChan)
@@ -447,14 +447,14 @@ func TestExecuteCommandEdgeCases(t *testing.T) {
 	t.Run("Commands with insufficient arguments", func(t *testing.T) {
 		// These should not panic, but may not work as expected
 		resultChan := make(chan ResultWithError, 1)
-		ExecuteCommand(&parser.Command{
+		ExecuteCommandAysnc(&parser.Command{
 			Name: "GET",
 			Args: []string{}, // No key provided
 		}, testStore, resultChan)
 		<-resultChan
 
 		resultChan = make(chan ResultWithError, 1)
-		ExecuteCommand(&parser.Command{
+		ExecuteCommandAysnc(&parser.Command{
 			Name: "SET",
 			Args: []string{"key"}, // No value provided
 		}, testStore, resultChan)
@@ -631,7 +631,7 @@ func TestIncrCommand(t *testing.T) {
 			}
 
 			resultChan := make(chan ResultWithError, 1)
-			ExecuteCommand(tt.command, testStore, resultChan)
+			ExecuteCommandAysnc(tt.command, testStore, resultChan)
 			<-resultChan
 
 			if tt.verify != nil {
@@ -704,7 +704,7 @@ func TestDecrCommand(t *testing.T) {
 			}
 
 			resultChan := make(chan ResultWithError, 1)
-			ExecuteCommand(tt.command, testStore, resultChan)
+			ExecuteCommandAysnc(tt.command, testStore, resultChan)
 			<-resultChan
 
 			if tt.verify != nil {
@@ -825,7 +825,7 @@ func TestIncrByCommand(t *testing.T) {
 			}
 
 			resultChan := make(chan ResultWithError, 1)
-			ExecuteCommand(tt.command, testStore, resultChan)
+			ExecuteCommandAysnc(tt.command, testStore, resultChan)
 			<-resultChan
 
 			if tt.verify != nil {
@@ -946,7 +946,7 @@ func TestDecrByCommand(t *testing.T) {
 			}
 
 			resultChan := make(chan ResultWithError, 1)
-			ExecuteCommand(tt.command, testStore, resultChan)
+			ExecuteCommandAysnc(tt.command, testStore, resultChan)
 			<-resultChan
 
 			if tt.verify != nil {
