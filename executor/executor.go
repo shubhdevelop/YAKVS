@@ -15,7 +15,7 @@ type ResultWithError struct {
 }
 
 func ExecuteCommandAysnc(cmd *parser.Command, store *store.Store, ch chan ResultWithError) {
-	fmt.Println("Executing command:", cmd)
+	// fmt.Println("Executing command:", cmd) // Commented out for benchmarks
 	
 	// Execute command concurrently in a goroutine
 	go func() {
