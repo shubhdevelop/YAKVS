@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/shubhdevelop/YAKVS/aof"
@@ -27,10 +26,12 @@ func init() {
 }
 
 func main() {
-	fmt.Println("YAKVS")
-	// Read and execute commands from AOF file
+	// Rebuild database from AOF file
 	err := aofManager.ReadAndExecuteCommands(func(cmd *parser.Command) {
-		executor.ExecuteCommandSync(cmd, KvStore)
+		// Execute commands synchronously during recovery to ensure proper order
+		if err := executor.ExecuteCommandSync(cmd, KvStore); err != nil {
+			log.Printf("Error executing command during recovery: %v", err)
+		}
 	})
 	
 	if err != nil {
