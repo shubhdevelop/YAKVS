@@ -25,8 +25,7 @@ func NewDecreByCommand(cmd *parser.Command, store *store.Store) *DecreByCommand 
 // Execute executes the DECRBY command
 func (sc *DecreByCommand) Execute() string {
 	if len(sc.Command.Args) < 2 {
-		fmt.Println("Error: DECRBY requires 2 arguments (key, value)")
-		return ":-1\r\n"		
+		return "-ERR wrong number of arguments for 'DECRBY' command\r\n"
 	}	
 
 	key := sc.Command.Args[0]
@@ -35,18 +34,16 @@ func (sc *DecreByCommand) Execute() string {
 	//change the value to string 
 	valueInt, err := strconv.Atoi(value)
 	if err != nil {
-		fmt.Println("Error: DECRBY requires a valid integer value")
-		return ":-1\r\n"
+		return "-ERR invalid value: " + err.Error() + "\r\n"
 	}
 	
 	newValue, err := sc.Store.DecreBy(key, valueInt)
 	if err != nil {
-		fmt.Println("Error: ", err)
-		return ":-1\r\n"
+		return "-ERR " + err.Error() + "\r\n"
 	}
 	
-	fmt.Printf(":%d\r\n", newValue)
-	return fmt.Sprintf(":%d\r\n", newValue)
+	valueStr := fmt.Sprintf("%d", newValue)
+	return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 }
 
 // DecreByCommandMeta provides metadata for the DECRBY command
@@ -67,13 +64,14 @@ func DecreByMeta() *DecreByCommandMeta {
 		HelpLong: `
 DECRBY decrements the value for the key in args.
 
-The command returns +OK if the key is decremented.
+The command returns the new value if the key is decremented.
 		`,
 		Examples: `
 >> DECRBY k1 1
 OK
 >> DECRBY k2 2
-+OK
+$2
+1
 		`,
 	}
 }

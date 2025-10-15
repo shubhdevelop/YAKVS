@@ -24,8 +24,7 @@ func NewIncrCommand(cmd *parser.Command, store *store.Store) *IncrCommand {
 // Execute executes the INCR command
 func (sc *IncrCommand) Execute() string {
 	if len(sc.Command.Args) < 1 {
-		fmt.Println("Error: INCR requires 1 argument (key)")
-		return ":-1\r\n"
+		return "-ERR wrong number of arguments for 'INCR' command\r\n"
 	}	
 
 	key := sc.Command.Args[0]
@@ -33,11 +32,10 @@ func (sc *IncrCommand) Execute() string {
 	
 	newValue, err := sc.Store.IncreBy(key, 1)
 	if err != nil {
-		fmt.Println("Error: ", err)
-		return ":-1\r\n"
+		return "-ERR " + err.Error() + "\r\n"
 	}
-	fmt.Printf(":%d\r\n", newValue)
-	return fmt.Sprintf(":%d\r\n", newValue)
+	valueStr := fmt.Sprintf("%d", newValue)
+	return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 }
 
 // IncrCommandMeta provides metadata for the INCR command
@@ -49,7 +47,7 @@ type IncrCommandMeta struct {
 	Examples  string
 }
 
-// SetMeta returns the command metadata
+// IncrMeta returns the command metadata
 func IncrMeta() *IncrCommandMeta {
 	return &IncrCommandMeta{
 		Name:      "INCR",
@@ -62,9 +60,11 @@ INCR increments the value for the key in args.
 		`,
 		Examples: `
 >> INCR k1
-:1
+$2
+1
 >> INCR k2
-:2
+$2
+2
 		`,
 	}
 }

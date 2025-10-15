@@ -24,8 +24,7 @@ func NewGetCommand(cmd *parser.Command, store *store.Store) *GetCommand {
 // Execute executes the GET command
 func (gc *GetCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
-		fmt.Println("Error: GET requires 1 argument (key)")
-		return "$-1\r"
+		return "-ERR wrong number of arguments for 'GET' command\r\n"
 	}
 
 	key := gc.Command.Args[0]
@@ -34,14 +33,9 @@ func (gc *GetCommand) Execute() string {
 	if value == nil {
 		return "$-1\r\n"
 	} else {
-		// Check if the value is an integer
-		if intVal, ok := value.(int); ok {
-			return fmt.Sprintf(":%d\r\n", intVal)
-		} else {
-			// For string values, use bulk string format
-			valueStr := fmt.Sprintf("%v", value)
-			return fmt.Sprintf("$%d\r\n%s\r\n", len(valueStr), valueStr)
-		}
+		// Convert value to string and use bulk string format
+		valueStr := fmt.Sprintf("%v", value)
+		return fmt.Sprintf("$%d\r\n%s\r\n", len(valueStr), valueStr)
 	}
 }
 

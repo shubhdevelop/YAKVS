@@ -24,26 +24,26 @@ func NewDelCommand(cmd *parser.Command, store *store.Store) *DelCommand {
 // Execute executes the DEL command
 func (dc *DelCommand) Execute() string {
 	if len(dc.Command.Args) < 1 {
-		fmt.Println("Error: DEL requires 1 argument (key)")
-		return "$-1\r"
+		return "-ERR wrong number of arguments for 'DEL' command\r\n"
 	}
 
 	key := dc.Command.Args[0]
 	
 	// Check if key exists before attempting to delete
 	if !dc.Store.Exists(key) {
-		fmt.Println("$-1\r")
-		return "$-1\r"
+		valueStr := fmt.Sprintf("%d", 0)
+		return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 	}
 	
 	// Actually delete the key
 	deleted := dc.Store.DeleteValue(key)
 	if deleted {
-		fmt.Println("+OK\r")
+		valueStr := fmt.Sprintf("%d", 1)
+		return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 	} else {
-		fmt.Println("$-1\r")
+		valueStr := fmt.Sprintf("%d", 0)
+		return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 	}
-	return "+OK\r\n"
 }
 
 // DelCommandMeta provides metadata for the DEL command
@@ -55,7 +55,7 @@ type DelCommandMeta struct {
 	Examples  string
 }
 
-// GetMeta returns the command metadata
+// DelMeta returns the command metadata
 func DelMeta() *DelCommandMeta {
 	return &DelCommandMeta{
 		Name:      "DEL",
@@ -64,13 +64,14 @@ func DelMeta() *DelCommandMeta {
 		HelpLong: `
 DEL deletes the key and its associated value from the store.
 
-The command returns +OK if the key is deleted, otherwise -1.
+The command returns the number of keys deleted, which is 1 if the key is deleted, otherwise 0.
 		`,
 		Examples: `
 >> SET k1 v1
 OK
 >> DEL k1
-+OK
+$2
+1
 		`,
 	}
 }

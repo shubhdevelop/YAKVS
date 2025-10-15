@@ -24,19 +24,19 @@ func NewExistsCommand(cmd *parser.Command, store *store.Store) *ExistsCommand {
 // Execute executes the GET command
 func (gc *ExistsCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
-		fmt.Println("Error: EXISTS requires 1 argument (key)")
-		return "$-1\r"
+		return "-ERR wrong number of arguments for 'EXISTS' command\r\n"
 	}
 
 	key := gc.Command.Args[0]
 	value := gc.Store.Exists(key)
 	
 	if value {
-		fmt.Println(":1\r")
+		valueStr := fmt.Sprintf("%d", 1)
+		return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 	} else {
-		fmt.Println(":0\r")
+		valueStr := fmt.Sprintf("%d", 0)
+		return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 	}
-	return fmt.Sprintf(":%v\r\n", value)
 }
 
 // GetCommandMeta provides metadata for the GET command

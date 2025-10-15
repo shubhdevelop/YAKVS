@@ -25,8 +25,7 @@ func NewIncreByCommand(cmd *parser.Command, store *store.Store) *IncreByCommand 
 // Execute executes the INCRBY command
 func (sc *IncreByCommand) Execute() string {
 	if len(sc.Command.Args) < 2 {
-		fmt.Println("Error: INCRBY requires 2 arguments (key, value)")
-		return ":-1\r\n"
+		return "-ERR wrong number of arguments for 'INCRBY' command\r\n"
 	}	
 
 	key := sc.Command.Args[0]
@@ -35,17 +34,15 @@ func (sc *IncreByCommand) Execute() string {
 	//change the value to string 
 	valueInt, err := strconv.Atoi(value)
 	if err != nil {
-		fmt.Println("Error: INCRBY requires a valid integer value")
-		return ":-1\r\n"
+		return "-ERR invalid value: " + err.Error() + "\r\n"
 	}
 	
 	newValue, err := sc.Store.IncreBy(key, valueInt)
 	if err != nil {
-		fmt.Println("Error: ", err)
-		return ":-1\r\n"
+		return "-ERR " + err.Error() + "\r\n"
 	}
-	fmt.Printf(":%d\r\n", newValue)
-	return fmt.Sprintf(":%d\r\n", newValue)
+	valueStr := fmt.Sprintf("%d", newValue)
+	return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 }
 
 // IncreByCommandMeta provides metadata for the INCRBY command
@@ -57,7 +54,7 @@ type IncreByCommandMeta struct {
 	Examples  string
 }
 
-// SetMeta returns the command metadata
+// IncreByMeta returns the command metadata
 func IncreByMeta() *IncreByCommandMeta {
 	return &IncreByCommandMeta{
 		Name:      "INCRBY",
@@ -66,13 +63,14 @@ func IncreByMeta() *IncreByCommandMeta {
 		HelpLong: `
 INCRBY increments the value for the key in args.
 
-The command returns +OK if the key is incremented.
+The command returns the new value if the key is incremented.
 		`,
 		Examples: `
 >> INCRBY k1 1
 OK
 >> INCRBY k2 2
-+OK
+$2
+2
 		`,
 	}
 }

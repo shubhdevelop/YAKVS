@@ -1,8 +1,6 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/shubhdevelop/YAKVS/parser"
 	"github.com/shubhdevelop/YAKVS/store"
 )
@@ -24,16 +22,14 @@ func NewSetCommand(cmd *parser.Command, store *store.Store) *SetCommand {
 // Execute executes the SET command
 func (sc *SetCommand) Execute() string {
 	if len(sc.Command.Args) < 2 {
-		fmt.Println("Error: SET requires 2 arguments (key, value)")
-		return "$-1\r"
+		return "-ERR wrong number of arguments for 'SET' command\r\n"
 	}	
 
 	key := sc.Command.Args[0]
 	value := sc.Command.Args[1]
 	
 	sc.Store.SetValue(key, value)
-	fmt.Println("+OK\r")
-	return "+OK\r\n"
+	return "+OK\r\n" 
 }
 
 // SetCommandMeta provides metadata for the SET command

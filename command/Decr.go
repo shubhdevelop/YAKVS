@@ -24,8 +24,7 @@ func NewDecrCommand(cmd *parser.Command, store *store.Store) *DecrCommand {
 // Execute executes the DECR command
 func (sc *DecrCommand) Execute() string {
 	if len(sc.Command.Args) < 1 {
-		fmt.Println("Error: DECR requires 1 argument (key)") 
-		return ":-1\r\n"
+		return "-ERR wrong number of arguments for 'DECR' command\r\n"
 	}	
 
 	key := sc.Command.Args[0]
@@ -33,11 +32,10 @@ func (sc *DecrCommand) Execute() string {
 	
 	newValue, err := sc.Store.DecreBy(key, 1)
 	if err != nil {
-		fmt.Println("Error: ", err)
-		return ":-1\r\n"
+		return "-ERR " + err.Error() + "\r\n"
 	}
-	fmt.Printf(":%d\r\n", newValue)
-	return fmt.Sprintf(":%d\r\n", newValue)
+	valueStr := fmt.Sprintf("%d", newValue)
+	return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 }
 
 // DecrCommandMeta provides metadata for the DECR command
@@ -49,7 +47,7 @@ type DecrCommandMeta struct {
 	Examples  string
 }
 
-// SetMeta returns the command metadata
+// DecrMeta returns the command metadata
 func DecrMeta() *DecrCommandMeta {
 	return &DecrCommandMeta{
 		Name:      "DECR",
@@ -62,9 +60,11 @@ DECR decrements the value for the key in args.
 		`,
 		Examples: `
 >> DECR k1
-:0
+$2
+0
 >> DECR k2
-:1
+$2
+1
 		`,
 	}
 }

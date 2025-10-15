@@ -25,24 +25,23 @@ func NewExpireAtCommand(cmd *parser.Command, store *store.Store) *ExpireAtComman
 // Execute executes the EXPIREAT command
 func (gc *ExpireAtCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
-		fmt.Println("Error: EXPIREAT requires 1 argument (key)")
-		return "$-1\r"
+		return "-ERR wrong number of arguments for 'EXPIREAT' command\r\n"
 	}
 
 	key := gc.Command.Args[0]
 	ttl, err := strconv.ParseInt(gc.Command.Args[1], 10, 64)
 	if err != nil {
-		fmt.Println("Error parsing TTL:", err)
-		return "$-1\r"
+		return "-ERR invalid TTL: " + err.Error() + "\r\n"
 	}
 	value := gc.Store.SetTTL(key, ttl) 
 	
 	if value {
-		fmt.Println("+OK\r")
+		valueStr := fmt.Sprintf("%d", 1)
+		return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 	} else {
-		fmt.Println(":0\r") // we expect the key to be set successfully
+		valueStr := fmt.Sprintf("%d", 0)
+		return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 	}
-	return "+OK\r\n"
 }
 
 // ExpireAtCommandMeta provides metadata for the EXPIREAT command

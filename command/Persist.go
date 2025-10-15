@@ -24,17 +24,18 @@ func NewPersistCommand(cmd *parser.Command, store *store.Store) *PersistCommand 
 // Execute executes the PERSIST command
 func (gc *PersistCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
-		fmt.Println("Error: PERSIST requires 1 argument (key)")
-		return "$-1\r\n"
+		return "-ERR wrong number of arguments for 'PERSIST' command\r\n"
 	}
 
 	key := gc.Command.Args[0]
 	value := gc.Store.RemoveExpiry(key)
 	
 	if value {
-		return fmt.Sprintf(":%v\r\n", value)
+		valueStr := fmt.Sprintf("%d", 1)
+		return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 	} else {
-		return ":0\r\n"
+		valueStr := fmt.Sprintf("%d", 0)
+		return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 	}
 }
 

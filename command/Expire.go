@@ -9,13 +9,13 @@ import (
 	"github.com/shubhdevelop/YAKVS/store"
 )
 
-// GetCommand handles the GET command
+// ExpireCommand handles the EXPIRE command
 type ExpireCommand struct {
 	Command *parser.Command
 	Store   *store.Store
 }
 
-// NewGetCommand creates a new GET command instance
+// NewExpireCommand creates a new EXPIRE command instance
 func NewExpireCommand(cmd *parser.Command, store *store.Store) *ExpireCommand {
 	return &ExpireCommand{
 		Command: cmd,
@@ -23,31 +23,30 @@ func NewExpireCommand(cmd *parser.Command, store *store.Store) *ExpireCommand {
 	}
 }
 
-// Execute executes the GET command
+// Execute executes the EXPIRE command
 func (gc *ExpireCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
-		fmt.Println("Error: EXPIRE requires 2 arguments (key, ttl)")
-		return "$-1\r"
+		return "-ERR wrong number of arguments for 'EXPIRE' command\r\n"
 	}
 
 	key := gc.Command.Args[0]
 	ttl, err := strconv.ParseInt(gc.Command.Args[1], 10, 64)
 	if err != nil {
-		fmt.Println("Error parsing TTL:", err)
-		return "$-1\r"
+		return "-ERR invalid TTL: " + err.Error() + "\r\n"
 	}
 	ttl = time.Now().Unix() + ttl
 	value := gc.Store.SetTTL(key, ttl) 
 	
 	if value {
-		fmt.Println("+OK\r")
+		valueStr := fmt.Sprintf("%d", 1)
+		return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)		
 	} else {
-		fmt.Println(":0\r") // we expect the key to be set successfully
+		valueStr := fmt.Sprintf("%d", 0)
+		return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 	}
-	return "+OK\r\n"
 }
 
-// GetCommandMeta provides metadata for the GET command
+// ExpireCommandMeta provides metadata for the EXPIRE command
 type ExpireCommandMeta struct {
 	Name      string
 	Syntax    string
@@ -56,7 +55,7 @@ type ExpireCommandMeta struct {
 	Examples  string
 }
 
-// GetMeta returns the command metadata
+// ExpireMeta returns the command metadata
 func ExpireMeta() *ExpireCommandMeta {
 	return &ExpireCommandMeta{
 		Name:      "EXPIRE",

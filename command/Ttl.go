@@ -24,8 +24,7 @@ func NewTtlCommand(cmd *parser.Command, store *store.Store) *TtlCommand {
 // Execute executes the TTL command
 func (gc *TtlCommand) Execute() string {
 	if len(gc.Command.Args) < 1 {
-		fmt.Println("Error: TTL requires 1 argument (key)")
-		return ":-1\r\n"	 
+		return "-ERR wrong number of arguments for 'TTL' command\r\n"
 	}
 
 	key := gc.Command.Args[0]
@@ -34,7 +33,8 @@ func (gc *TtlCommand) Execute() string {
 	if value == -2 {
 		return ":-2\r\n"
 	} 
-	return fmt.Sprintf(":%v\r\n", value)
+	valueStr := fmt.Sprintf("%d", value)
+	return fmt.Sprintf("%d\r\n%s\r\n", len(valueStr), valueStr)
 }
 
 // TtlCommandMeta provides metadata for the TTL command
