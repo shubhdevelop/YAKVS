@@ -74,10 +74,11 @@ func handleConnection(conn net.Conn, kvStore *store.Store, aofManager *aof.AOFMa
 				fmt.Println("Writing command to AOF file:", resp)
 			}
 
-			resultChan := make(chan executor.ResultWithError, 1) 
+			resultChan := executor.GlobalChannelPool.Get()
 			executor.ExecuteCommandAysnc(command, kvStore, resultChan)
 			
 			result := <-resultChan
+			executor.GlobalChannelPool.Put(resultChan)
 			if result.Err != nil {
 				fmt.Printf("error executing command: %v\n", result.Err)
 				conn.Write([]byte("$-1\r\n\n"))
