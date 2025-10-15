@@ -68,6 +68,9 @@ func (s *Store) GetValue(key string) interface{} {
 }
 
 func (s *Store) SetValue(key string, value interface{}) {
+	// Remove any existing expiry when setting a new value (Redis behavior)
+	delete(*s.Expiry, key)
+	
 	if strVal, ok := value.(string); ok {
 		// Try to convert string to integer first
 		if intVal, err := strconv.Atoi(strVal); err == nil {
