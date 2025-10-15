@@ -34,8 +34,6 @@ func StartServer(port string, kvStore *store.Store, aofManager *aof.AOFManager) 
 func handleConnection(conn net.Conn, kvStore *store.Store, aofManager *aof.AOFManager) {
 	defer conn.Close()
 
-	fmt.Printf("New connection from %s\n", conn.RemoteAddr())
-
 	reader := bufio.NewReader(conn)
 
 	for {
@@ -45,54 +43,48 @@ func handleConnection(conn net.Conn, kvStore *store.Store, aofManager *aof.AOFMa
 			return
 		}
 		if line == "\n" || line == "" {
-			conn.Write([]byte("$-1\r\n"))
+			fmt.Println("Empty line received")
+			conn.Write([]byte("$-1\r\n\n"))
 			continue
 		}
-		fmt.Println("Received message:", line)
 		resp, err := utils.ToRESP(line)
 		if err != nil {
 			fmt.Printf("Error converting to RESP: %v\n", err)
-			conn.Write([]byte("$-1\r\n"))
+			conn.Write([]byte("$-1\r\n\n"))
 			continue
 		}
 
 		if utils.IsRESPFormat(resp) {
-			// Preprocess input to convert literal \r\n to actual control characters
-			// processedInput := utils.PreprocessInput(resp)
 			parser := parser.NewStreamingParser([]byte(resp))
-			fmt.Println("Parsing RESP command:", resp)
 			command, err := parser.ParseCommand()
 			if err != nil {
 				fmt.Printf("Error parsing RESP command: %v\n", err)
-				conn.Write([]byte("$-1\r\n"))
+				conn.Write([]byte("$-1\r\n\n"))
 				continue
 			}
-			// check if command should be persisted
+
+
 			if aofManager.ShouldPersistCommand(command.Name) {
 				err := aofManager.WriteCommand(resp)
 				if err != nil {
-					log.Fatalf("failed to write to AOF file: %v", err)
-					conn.Write([]byte("$-1\r\n"))
+					fmt.Printf("failed to write to AOF file: %v\n", err)
+					conn.Write([]byte("$-1\r\n\n"))
 					continue
 				}
 				fmt.Println("Writing command to AOF file:", resp)
 			}
 
-			resultChan := make(chan executor.ResultWithError, 1) // Buffered channel for single result
-
-			// Execute command concurrently
+			resultChan := make(chan executor.ResultWithError, 1) 
 			executor.ExecuteCommandAysnc(command, kvStore, resultChan)
 			
-			// Wait for the result from the concurrent execution
 			result := <-resultChan
 			if result.Err != nil {
-				fmt.Printf("Error executing command: %v\n", result.Err)
-				conn.Write([]byte("$-1\r\n"))
+				fmt.Printf("error executing command: %v\n", result.Err)
+				conn.Write([]byte("$-1\r\n\n"))
 				continue
 			}
-			fmt.Println("command response:", result.Result)
-			// write the response to the client
-			conn.Write([]byte(result.Result))
+			fmt.Printf("command response: %s\n", result.Result)
+			conn.Write([]byte(result.Result + "\n"))
 		}
 	}
 }

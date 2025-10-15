@@ -33,21 +33,27 @@ func runPrompt(conn net.Conn) {
 			break
 		}
 
-		fmt.Println("Sending message:", line)
 		// resp, err := utils.ToRESP(line[:len(line)-1])
 		resp := line
 
 		if resp != "" {
-			fmt.Println("Writing message:", resp)
 			conn.Write([]byte(resp))
 		}
+
 		reader := bufio.NewReader(conn)
-		line, err = reader.ReadString('\n')
-		if err != nil {
-			fmt.Println("Error reading from server:", err)
-			continue
+		var response []byte
+		for {
+			part, err := reader.ReadBytes('\n')
+			if err != nil {
+				break
+			}
+			response = append(response, part...)
+			if len(response) >= 2 && response[len(response)-2] == '\n' && response[len(response)-1] == '\n' {
+				break
+			}
 		}
-		fmt.Println("Received message from server:", line)
+		line = string(response[0:len(response)-2])
+		fmt.Println(line)	
 		if line == "exit\n" {
 			break
 		}
