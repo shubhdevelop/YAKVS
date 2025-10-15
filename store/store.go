@@ -14,7 +14,7 @@ type ExpiryDict map[string]int64 // Separate expires dictionary: key -> unix_tim
 type Store struct {
 	Dict   *KvObjectDict
 	Expiry *ExpiryDict
-	Mu     sync.Mutex
+	Mu     sync.RWMutex
 }
 
 type StoreInterface interface {
@@ -40,6 +40,8 @@ func NewStore() *Store {
 
 // for the given key get the kvObject and return the value
 func (s *Store) GetValue(key string) interface{} {
+	s.Mu.RLock()
+	defer s.Mu.RUnlock()
 
 	// if it exists in the expiry dictionary, check if it has expired
 	if _, exists := (*s.Expiry)[key]; exists {
@@ -89,6 +91,8 @@ func (s *Store) SetValue(key string, value interface{}) {
 }
 
 func (s *Store) DeleteValue(key string) bool {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
 	if obj, exists := (*s.Dict)[key]; exists {
 		obj.refcount = 0 // we can remove the key from the dictionary
 		delete(*s.Dict, key)
@@ -99,11 +103,15 @@ func (s *Store) DeleteValue(key string) bool {
 }
 
 func (s *Store) Exists(key string) bool {
+	s.Mu.RLock()
+	defer s.Mu.RUnlock()
 	obj, exists := (*s.Dict)[key]
 	return exists && obj.refcount > 0
 }
 
 func (s *Store) GetTTL(key string) int {
+	s.Mu.RLock()
+	defer s.Mu.RUnlock()
 	if _, exists := (*s.Dict)[key]; !exists {
 		return -2 // Key doesn't exist at all
 	}
@@ -128,6 +136,8 @@ func (s *Store) GetTTL(key string) int {
 
 // SetTTL sets the time-to-live for a key in seconds
 func (s *Store) SetTTL(key string, ttl int64) bool {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
 	// Check if the key exists in the main dictionary
 	if _, exists := (*s.Dict)[key]; !exists {
 		return false // Key doesn't exist
@@ -140,6 +150,8 @@ func (s *Store) SetTTL(key string, ttl int64) bool {
 
 // RemoveExpiry removes the TTL from a key, making it persistent
 func (s *Store) RemoveExpiry(key string) bool {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
 	// Check if the key exists in the main dictionary
 	if _, exists := (*s.Dict)[key]; !exists {
 		return false // Key doesn't exist
@@ -151,6 +163,8 @@ func (s *Store) RemoveExpiry(key string) bool {
 }
 
 func (s *Store) IncreBy(key string, value int) (int, error) {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
 	if obj, exists := (*s.Dict)[key]; exists {
 		// check for the encoding must be int
 		if obj.getEncoding() != OBJ_ENCODING_INT {
@@ -168,6 +182,8 @@ func (s *Store) IncreBy(key string, value int) (int, error) {
 }
 
 func (s *Store) DecreBy(key string, value int) (int, error) {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
 	if obj, exists := (*s.Dict)[key]; exists {
 		// check for the encoding must be int
 		if obj.getEncoding() != OBJ_ENCODING_INT {

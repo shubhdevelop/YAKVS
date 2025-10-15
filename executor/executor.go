@@ -14,14 +14,7 @@ type ResultWithError struct {
 	Err    error
 }
 
-func ExecuteCommandAysnc(cmd *parser.Command, store *store.Store, ch chan ResultWithError) {
-	fmt.Println("Executing command:", cmd)
-	
-	// Execute command concurrently in a goroutine
-	go func() {
-		store.Mu.Lock()
-		defer store.Mu.Unlock()
-		
+func ExecuteCommandAysnc(cmd *parser.Command, store *store.Store, ch chan ResultWithError) {		
 		switch strings.ToUpper(cmd.Name) {
 		case "BGSAVE":
 			bgSaveCmd := command.NewBgSaveCommand(cmd, store)
@@ -65,7 +58,6 @@ func ExecuteCommandAysnc(cmd *parser.Command, store *store.Store, ch chan Result
 		default:
 			ch <- ResultWithError{Result: "", Err: fmt.Errorf("invalid command: %s", cmd.Name)}
 		}
-	}()
 }
 
 func ExecuteCommandSync(cmd *parser.Command, store *store.Store) error {
