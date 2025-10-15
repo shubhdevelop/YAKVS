@@ -68,7 +68,7 @@ func ExecuteCommandAysnc(cmd *parser.Command, store *store.Store, ch chan Result
 	}()
 }
 
-func ExecuteCommandSync(cmd *parser.Command, store *store.Store) {
+func ExecuteCommandSync(cmd *parser.Command, store *store.Store) error {
 	switch strings.ToUpper(cmd.Name) {
 
 	case "SET":
@@ -107,5 +107,8 @@ func ExecuteCommandSync(cmd *parser.Command, store *store.Store) {
 	case "DECR":
 		decrByCmd := command.NewDecrCommand(cmd, store)
 		decrByCmd.Execute()
+	default:
+		return fmt.Errorf("invalid command: %s", cmd.Name)
 	}
+	return nil
 }
