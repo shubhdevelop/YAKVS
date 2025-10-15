@@ -41,16 +41,33 @@ func NewStore() *Store {
 // for the given key get the kvObject and return the value
 func (s *Store) GetValue(key string) interface{} {
 	s.Mu.RLock()
-	defer s.Mu.RUnlock()
-
-	// if it exists in the expiry dictionary, check if it has expired
+	
+	// Check if key exists and has expired
+	var expired bool
 	if _, exists := (*s.Expiry)[key]; exists {
 		if time.Now().Unix() > (*s.Expiry)[key] {
-			delete(*s.Expiry, key)
-			delete(*s.Dict, key)
-			return nil // Key has expired
+			expired = true
 		}
 	}
+	
+	// If expired, we need to upgrade to write lock to delete
+	if expired {
+		s.Mu.RUnlock()
+		s.Mu.Lock()
+		defer s.Mu.Unlock()
+		
+		// Double-check expiry after acquiring write lock
+		if _, exists := (*s.Expiry)[key]; exists {
+			if time.Now().Unix() > (*s.Expiry)[key] {
+				delete(*s.Expiry, key)
+				delete(*s.Dict, key)
+				return nil // Key has expired
+			}
+		}
+	} else {
+		defer s.Mu.RUnlock()
+	}
+	
 	// only return if the ref count if greater than 0
 	if obj, exists := (*s.Dict)[key]; exists && obj.refcount > 0 {
 		// Handle different encodings based on the object's encoding
@@ -70,6 +87,9 @@ func (s *Store) GetValue(key string) interface{} {
 }
 
 func (s *Store) SetValue(key string, value interface{}) {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
+	
 	// Remove any existing expiry when setting a new value (Redis behavior)
 	delete(*s.Expiry, key)
 	
@@ -111,14 +131,16 @@ func (s *Store) Exists(key string) bool {
 
 func (s *Store) GetTTL(key string) int {
 	s.Mu.RLock()
-	defer s.Mu.RUnlock()
+	
 	if _, exists := (*s.Dict)[key]; !exists {
+		s.Mu.RUnlock()
 		return -2 // Key doesn't exist at all
 	}
 
 	// Check if key has expiry set
 	ttl, hasExpiry := (*s.Expiry)[key]
 	if !hasExpiry {
+		s.Mu.RUnlock()
 		return -1 // Key exists but has no expiry
 	}
 
@@ -126,11 +148,26 @@ func (s *Store) GetTTL(key string) int {
 	timeDiff := time.Until(time.Unix(ttl, 0))
 
 	if timeDiff.Seconds() < 0 {
-		delete(*s.Expiry, key)
-		delete(*s.Dict, key)
+		// Key has expired, need write lock to delete
+		s.Mu.RUnlock()
+		s.Mu.Lock()
+		defer s.Mu.Unlock()
+		
+		// Double-check expiry after acquiring write lock
+		if _, exists := (*s.Dict)[key]; exists {
+			if ttl, hasExpiry := (*s.Expiry)[key]; hasExpiry {
+				timeDiff := time.Until(time.Unix(ttl, 0))
+				if timeDiff.Seconds() < 0 {
+					delete(*s.Expiry, key)
+					delete(*s.Dict, key)
+					return -2 // Key has expired
+				}
+			}
+		}
 		return -2 // Key has expired
 	}
 
+	s.Mu.RUnlock()
 	return int(timeDiff.Seconds())
 }
 
